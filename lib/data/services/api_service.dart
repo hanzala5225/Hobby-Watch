@@ -211,6 +211,13 @@ class ApiService extends GetxService {
     return res.data['data'] ?? {};
   }
 
+  Future<void> resetPassword(String email, String newPassword) async {
+    await _dio.post('/auth/reset-password', data: {
+      'email': email,
+      'newPassword': newPassword,
+    });
+  }
+
   Future<UserModel> updateProfile(Map<String, dynamic> data) async {
     final res = await _dio.put('/auth/profile', data: data);
     return UserModel.fromJson(res.data['data'] ?? res.data);

@@ -5,6 +5,7 @@ class UserModel {
   final String? avatarUrl;
   final bool isEmailVerified;
   final DateTime createdAt;
+  final DateTime? scheduledDeleteAt;
 
   UserModel({
     required this.id,
@@ -13,6 +14,7 @@ class UserModel {
     this.avatarUrl,
     this.isEmailVerified = false,
     required this.createdAt,
+    this.scheduledDeleteAt,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
@@ -24,6 +26,9 @@ class UserModel {
     createdAt:        json['createdAt'] != null
         ? DateTime.parse(json['createdAt'])
         : DateTime.now(),
+    scheduledDeleteAt: json['scheduledDeleteAt'] != null
+        ? DateTime.parse(json['scheduledDeleteAt'])
+        : null,
   );
 
   Map<String, dynamic> toJson() => {
@@ -33,6 +38,7 @@ class UserModel {
     'avatarUrl':        avatarUrl,
     'isEmailVerified':  isEmailVerified,
     'createdAt':        createdAt.toIso8601String(),
+    'scheduledDeleteAt': scheduledDeleteAt?.toIso8601String(),
   };
 
   String get displayName => fullName ?? email.split('@').first;
