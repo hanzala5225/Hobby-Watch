@@ -131,12 +131,14 @@ class ApiService extends GetxService {
     int pageSize = 50,
     String? search,
     String? sortBy,
+    bool includeSold = false,
   }) async {
     final res = await _dio.get('/cards', queryParameters: {
       'page': page,
       'pageSize': pageSize,
       if (search != null && search.isNotEmpty) 'search': search,
       if (sortBy != null) 'sortBy': sortBy,
+      if (includeSold) 'includeSold': true,
     });
 
     final data = res.data['data'];

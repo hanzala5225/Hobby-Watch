@@ -9,6 +9,7 @@ import '../../data/models/card_model.dart';
 import '../../data/services/api_service.dart';
 import '../collection/collection_controller.dart';
 import '../dashboard/dashboard_controller.dart';
+import '../sold_history/sold_history_controller.dart';
 
 class CardDetailController extends GetxController {
   final _api = Get.find<ApiService>();
@@ -88,19 +89,24 @@ class CardDetailController extends GetxController {
       final updated = await _api.markAsSold(card.value.id, soldPrice);
       card.value = updated;
 
-      // ── Immediately update CollectionController if it's alive ──────────
-      // This avoids requiring the user to pull-to-refresh after going back
+      // ── Immediately update CollectionController and DashboardController ──
       try {
         final collectionCtrl = Get.find<CollectionController>();
         final idx = collectionCtrl.cards.indexWhere((c) => c.id == updated.id);
         if (idx != -1) {
           collectionCtrl.cards[idx] = updated;
-          collectionCtrl.cards.refresh(); // triggers Obx rebuild
+          collectionCtrl.cards.refresh();
         }
-        // Also refresh dashboard if alive
-        final dashCtrl = Get.find<DashboardController>();
-        dashCtrl.loadCards();
-      } catch (_) {} // controllers may not be in memory — that's fine
+      } catch (_) {}
+
+      try {
+        Get.find<DashboardController>().updateCardInPlace(updated);
+      } catch (_) {}
+
+      // Also update sold history if it's open
+      try {
+        Get.find<SoldHistoryController>().loadSoldCards();
+      } catch (_) {}
 
       Get.back();
       Get.snackbar(

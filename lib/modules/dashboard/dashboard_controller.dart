@@ -18,7 +18,16 @@ class DashboardController extends GetxController {
   final user         = Rx<UserModel?>(null);
 
   List<CardModel> get targetReachedCards => cards.where((c) => c.isTargetReached && !c.isSold).toList();
-  List<CardModel> get recentCards        => cards.take(5).toList();
+  List<CardModel> get recentCards        => cards.where((c) => !c.isSold).take(5).toList();
+
+  // Called by CardDetailController after marking a card sold — instant UI update
+  void updateCardInPlace(CardModel updated) {
+    final idx = cards.indexWhere((c) => c.id == updated.id);
+    if (idx != -1) {
+      cards[idx] = updated;
+      cards.refresh();
+    }
+  }
 
   @override
   void onInit() {

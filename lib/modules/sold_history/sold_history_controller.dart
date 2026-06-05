@@ -33,8 +33,8 @@ class SoldHistoryController extends GetxController {
   Future<void> loadSoldCards() async {
     isLoading.value = true;
     try {
-      final result = await _api.getCards(pageSize: 200);
-      soldCards.assignAll(result.cards.where((c) => c.isSold).toList()
+      final result = await _api.getCards(pageSize: 200, includeSold: true);
+      soldCards.assignAll(result.cards
         ..sort((a, b) => (b.soldAt ?? DateTime(0)).compareTo(a.soldAt ?? DateTime(0))));
     } catch (_) {} finally {
       isLoading.value = false;
