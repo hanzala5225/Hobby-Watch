@@ -12,4 +12,5 @@ class AppRoutes {
   static const terms         = '/terms';
   static const privacy       = '/privacy';
   static const soldHistory   = '/sold-history';
+  static const forgotPassword = '/forgot-password';
 }

@@ -104,7 +104,18 @@ class LoginView extends GetView<LoginController> {
                   onTap: controller.login,
                 )),
 
-                SizedBox(height: 28.h),
+                SizedBox(height: 16.h),
+
+                // Forgot password
+                Center(
+                  child: GestureDetector(
+                    onTap: () => Get.toNamed(AppRoutes.forgotPassword),
+                    child: Text('Forgot your password?',
+                        style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.accent, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+
+                SizedBox(height: 24.h),
 
                 // Divider
                 Row(children: [
@@ -208,7 +219,7 @@ class _PrimaryButton extends StatelessWidget {
         child: Center(
           child: isLoading
               ? SizedBox(width: 22.w, height: 22.w,
-              child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2.5))
+              child: const CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2.5))
               : Text(label,
               style: GoogleFonts.inter(fontSize: 15.sp, fontWeight: FontWeight.w700, color: Colors.white)),
         ),

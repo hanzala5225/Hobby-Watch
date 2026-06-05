@@ -23,6 +23,8 @@ import '../legal/terms_view.dart';
 import '../legal/privacy_view.dart';
 import '../sold_history/sold_history_binding.dart';
 import '../sold_history/sold_history_view.dart';
+import '../auth/forgot_password/forgot_password_binding.dart';
+import '../auth/forgot_password/forgot_password_view.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -41,6 +43,7 @@ class AppPages {
     GetPage(name: AppRoutes.settings,      page: () => const SettingsView(),      binding: SettingsBinding(),      transition: Transition.rightToLeft),
     GetPage(name: AppRoutes.terms,         page: () => const TermsView(),         transition: Transition.rightToLeft),
     GetPage(name: AppRoutes.privacy,       page: () => const PrivacyView(),       transition: Transition.rightToLeft),
-    GetPage(name: AppRoutes.soldHistory,   page: () => const SoldHistoryView(),   binding: SoldHistoryBinding(),   transition: Transition.rightToLeft),
+    GetPage(name: AppRoutes.soldHistory,    page: () => const SoldHistoryView(),   binding: SoldHistoryBinding(),   transition: Transition.rightToLeft),
+    GetPage(name: AppRoutes.forgotPassword, page: () => const ForgotPasswordView(), binding: ForgotPasswordBinding(), transition: Transition.rightToLeft),
   ];
 }
