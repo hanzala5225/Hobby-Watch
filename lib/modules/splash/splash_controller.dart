@@ -11,7 +11,7 @@ class SplashController extends GetxController {
   }
 
   Future<void> _navigate() async {
-    await Future.delayed(const Duration(milliseconds: 9900));
+    await Future.delayed(const Duration(milliseconds: 1800));
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString(AppConstants.keyAccessToken);
     if (token != null && token.isNotEmpty) {
