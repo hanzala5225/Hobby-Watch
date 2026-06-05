@@ -119,12 +119,12 @@ class LoginView extends GetView<LoginController> {
 
                 // Divider
                 Row(children: [
-                  Expanded(child: Divider(color: AppColors.border)),
+                  const Expanded(child: Divider(color: AppColors.border)),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 14.w),
                     child: Text('or', style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textMuted)),
                   ),
-                  Expanded(child: Divider(color: AppColors.border)),
+                  const Expanded(child: Divider(color: AppColors.border)),
                 ]),
 
                 SizedBox(height: 28.h),
