@@ -43,6 +43,7 @@ class SettingsController extends GetxController {
       if (j != null) user.value = UserModel.fromJson(jsonDecode(j));
       final fresh = await _api.getProfile();
       user.value = fresh;
+      scheduledDeleteAt.value = fresh.scheduledDeleteAt;
       nameController.text = fresh.fullName ?? '';
       await prefs.setString(AppConstants.keyUser, jsonEncode(fresh.toJson()));
     } catch (_) {
@@ -97,11 +98,16 @@ class SettingsController extends GetxController {
     }
   }
 
+  final scheduledDeleteAt = Rx<DateTime?>(null);
+
   Future<void> logout() async {
-    final confirmed = await Get.dialog<bool>(
-      _SignOutDialog(),
-    ) ?? false;
+    final confirmed = await Get.dialog<bool>(_SignOutDialog()) ?? false;
     if (!confirmed) return;
+    await _doLogout();
+  }
+
+  // Direct logout — no confirmation dialog. Used by auto-countdown and delete flow.
+  Future<void> _doLogout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final rt = prefs.getString(AppConstants.keyRefreshToken) ?? '';
@@ -112,34 +118,27 @@ class SettingsController extends GetxController {
   }
 
   Future<void> requestDeleteAccount() async {
-    // Step 1 — confirm intent
     final confirmed = await Get.dialog<bool>(
       _DeleteAccountDialog(),
-      barrierDismissible: true, // user can still cancel by tapping outside here
+      barrierDismissible: true,
     ) ?? false;
 
     if (!confirmed) return;
 
-    // Step 2 — call backend to schedule deletion
     try {
       await _api.deleteAccount();
-    } catch (_) {
-      // Even if the endpoint fails, we still show the message
-      // (backend soft-deletes on next background run anyway)
-    }
+    } catch (_) {}
 
-    // Step 3 — show non-dismissible info dialog, auto-logout after 5 seconds
+    // Non-dismissible countdown dialog — user CANNOT tap outside
     Get.dialog(
-      _DeletionScheduledDialog(onOk: logout),
-      barrierDismissible: false, // cannot tap outside to dismiss
+      _DeletionScheduledDialog(onOk: _doLogout),
+      barrierDismissible: false,
     );
 
-    // Auto-logout after 5 seconds in case user ignores the button
-    Future.delayed(const Duration(seconds: 5), () {
-      if (Get.isDialogOpen ?? false) {
-        Get.back(); // close dialog
-      }
-      logout();
+    // Force logout after 5s regardless — bypasses any dialog interaction
+    Future.delayed(const Duration(seconds: 6), () async {
+      if (Get.isDialogOpen ?? false) Get.back();
+      await _doLogout();
     });
   }
 

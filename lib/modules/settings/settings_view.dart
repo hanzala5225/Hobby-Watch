@@ -58,9 +58,43 @@ class SettingsView extends GetView<SettingsController> {
             );
           }),
 
-          SizedBox(height: 28.h),
+          // ── Pending deletion warning ──────────────────────────────────────
+          Obx(() {
+            final deleteAt = controller.scheduledDeleteAt.value;
+            if (deleteAt == null) return const SizedBox();
+            final remaining = deleteAt.difference(DateTime.now());
+            final hoursLeft = remaining.inHours;
+            final minsLeft  = remaining.inMinutes % 60;
+            final timeStr   = hoursLeft > 0 ? '${hoursLeft}h ${minsLeft}m' : '< 1 hour';
+            return Padding(
+              padding: EdgeInsets.only(top: 14.h),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(14.w),
+                decoration: BoxDecoration(
+                  color: AppColors.loss.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(14.r),
+                  border: Border.all(color: AppColors.loss.withOpacity(0.3)),
+                ),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(Icons.warning_amber_rounded, color: AppColors.loss, size: 20.sp),
+                  SizedBox(width: 10.w),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('⚠️ Account Deletion Scheduled',
+                        style: GoogleFonts.inter(fontSize: 13.sp, fontWeight: FontWeight.w700, color: AppColors.loss)),
+                    SizedBox(height: 4.h),
+                    Text('Your account will be permanently deleted in $timeStr.',
+                        style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary, height: 1.4)),
+                    SizedBox(height: 5.h),
+                    Text('To cancel: sign out and log back in before the timer expires.',
+                        style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted, height: 1.4)),
+                  ])),
+                ]),
+              ),
+            );
+          }),
 
-          // ── Account ──────────────────────────────────────────────────────
+          SizedBox(height: 28.h),
           _sectionLabel('Account'),
           _tile(Icons.person_outline_rounded, 'Edit Profile', 'Update your name',
                   () => _showProfileSheet(context)),
