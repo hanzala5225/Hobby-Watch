@@ -147,7 +147,7 @@ class AddCardView extends GetView<AddCardController> {
             SizedBox(height: 8.h),
             TextFormField(controller: controller.gradeController, textCapitalization: TextCapitalization.characters,
               style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14.sp),
-              decoration: InputDecoration(hintText: 'PSA 10')),
+              decoration: const InputDecoration(hintText: 'PSA 10')),
           ])),
         ]),
         SizedBox(height: 18.h),

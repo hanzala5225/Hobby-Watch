@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -125,16 +126,203 @@ class _CollectionCardTile extends StatelessWidget {
         child: Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24.sp),
       ),
       confirmDismiss: (_) async {
-        return await Get.dialog<bool>(
-          AlertDialog(
-            backgroundColor: AppColors.bgCard,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-            title: Text('Delete Card?', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-            content: Text('Remove ${card.playerName} from your collection?', style: GoogleFonts.inter(color: AppColors.textSecondary)),
-            actions: [
-              TextButton(onPressed: () => Get.back(result: false), child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.textSecondary))),
-              TextButton(onPressed: () { Get.back(result: true); }, child: Text('Delete', style: GoogleFonts.inter(color: AppColors.loss, fontWeight: FontWeight.w600))),
-            ],
+        final isProfitable = (card.currentMarginPercent ?? 0) > 0;
+        final isTargetReached = card.isTargetReached;
+        final fmt2 = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+
+        return await showDialog<bool>(
+          context: context,
+          barrierColor: Colors.black.withOpacity(0.55),
+          builder: (_) => BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.bgCard,
+                  borderRadius: BorderRadius.circular(24.r),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 32, offset: const Offset(0, 8))],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header — red always, but extra warning if profitable
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(20.w),
+                      decoration: BoxDecoration(
+                        color: isTargetReached
+                            ? AppColors.accent.withOpacity(0.08)
+                            : AppColors.loss.withOpacity(0.06),
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+                        border: Border(bottom: BorderSide(
+                            color: isTargetReached
+                                ? AppColors.accent.withOpacity(0.15)
+                                : AppColors.loss.withOpacity(0.12))),
+                      ),
+                      child: Column(children: [
+                        Container(
+                          width: 52.w, height: 52.w,
+                          decoration: BoxDecoration(
+                            color: isTargetReached
+                                ? AppColors.accent.withOpacity(0.12)
+                                : AppColors.loss.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isTargetReached ? Icons.emoji_events_rounded : Icons.delete_forever_rounded,
+                            color: isTargetReached ? AppColors.accent : AppColors.loss,
+                            size: 24.sp,
+                          ),
+                        ),
+                        SizedBox(height: 10.h),
+                        Text(
+                          isTargetReached ? 'Wait — this card is hot! 🔥' : 'Delete Card?',
+                          style: GoogleFonts.inter(
+                              fontSize: 17.sp, fontWeight: FontWeight.w800,
+                              color: isTargetReached ? AppColors.accent : AppColors.loss),
+                          textAlign: TextAlign.center,
+                        ),
+                      ]),
+                    ),
+
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 20.h),
+                      child: Column(children: [
+                        // Card info
+                        Container(
+                          padding: EdgeInsets.all(12.w),
+                          decoration: BoxDecoration(
+                            color: AppColors.bgSurface,
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: Row(children: [
+                            Container(
+                              width: 38.w, height: 48.h,
+                              decoration: BoxDecoration(
+                                gradient: isTargetReached ? AppColors.profitGradient : AppColors.primaryGradient,
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: Icon(Icons.style_rounded, color: Colors.white, size: 18.sp),
+                            ),
+                            SizedBox(width: 12.w),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(card.playerName,
+                                  style: GoogleFonts.inter(fontSize: 13.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                  maxLines: 1, overflow: TextOverflow.ellipsis),
+                              Text('${card.year} • ${card.setName ?? ""}',
+                                  style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted)),
+                            ])),
+                            if (isProfitable)
+                              Text('+${(card.currentMarginPercent ?? 0).toStringAsFixed(1)}%',
+                                  style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w800,
+                                      color: isTargetReached ? AppColors.accent : AppColors.accent)),
+                          ]),
+                        ),
+
+                        SizedBox(height: 14.h),
+
+                        // Warning message
+                        if (isTargetReached) ...[
+                          Container(
+                            padding: EdgeInsets.all(12.w),
+                            decoration: BoxDecoration(
+                              color: AppColors.accent.withOpacity(0.06),
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(color: AppColors.accent.withOpacity(0.2)),
+                            ),
+                            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Icon(Icons.trending_up_rounded, color: AppColors.accent, size: 16.sp),
+                              SizedBox(width: 8.w),
+                              Expanded(child: Text(
+                                  'This card has hit your target margin! Consider marking it as sold instead — you\'ll keep your profit record.',
+                                  style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary, height: 1.4))),
+                            ]),
+                          ),
+                          SizedBox(height: 10.h),
+                        ] else if (isProfitable) ...[
+                          Container(
+                            padding: EdgeInsets.all(12.w),
+                            decoration: BoxDecoration(
+                              color: AppColors.accent.withOpacity(0.06),
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(color: AppColors.accent.withOpacity(0.15)),
+                            ),
+                            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Icon(Icons.lightbulb_outline_rounded, color: AppColors.accent, size: 16.sp),
+                              SizedBox(width: 8.w),
+                              Expanded(child: Text(
+                                  'This card is currently in profit. Deleting removes it permanently — no profit record saved.',
+                                  style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary, height: 1.4))),
+                            ]),
+                          ),
+                          SizedBox(height: 10.h),
+                        ] else ...[
+                          Text('This card will be permanently removed from your collection.',
+                              style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textSecondary, height: 1.4),
+                              textAlign: TextAlign.center),
+                          SizedBox(height: 14.h),
+                        ],
+
+                        // Buttons
+                        if (isTargetReached || isProfitable) ...[
+                          // Primary: mark as sold
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context, false),
+                            child: Container(
+                              width: double.infinity, height: 48.h,
+                              decoration: BoxDecoration(
+                                gradient: AppColors.profitGradient,
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                              child: Center(child: Text('Mark as Sold Instead',
+                                  style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: Colors.white))),
+                            ),
+                          ),
+                          SizedBox(height: 8.h),
+                          // Secondary: delete anyway
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: Text('Delete anyway',
+                                style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.loss, fontWeight: FontWeight.w500)),
+                          ),
+                        ] else ...[
+                          Row(children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.textSecondary,
+                                  side: const BorderSide(color: AppColors.border),
+                                  minimumSize: Size(0, 48.h),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                                ),
+                                child: Text('Cancel', style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w600)),
+                              ),
+                            ),
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.loss,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  minimumSize: Size(0, 48.h),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                                ),
+                                child: Text('Delete', style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700)),
+                              ),
+                            ),
+                          ]),
+                        ],
+                      ]),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ) ?? false;
       },

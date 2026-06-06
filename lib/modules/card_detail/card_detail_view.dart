@@ -22,64 +22,61 @@ class CardDetailView extends GetView<CardDetailController> {
 
         return CustomScrollView(
           slivers: [
-            // ── Hero App Bar ───────────────────────────────────────────────
-            SliverAppBar(
-              expandedHeight: 210.h,
-              pinned: true,
-              backgroundColor: AppColors.primary,
-              leading: IconButton(
-                icon: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20.sp),
-                onPressed: Get.back,
-              ),
-              actions: [
-                if (!isSold)
-                  Obx(() => controller.isRefreshing.value
-                      ? Padding(padding: EdgeInsets.all(14.w),
-                      child: SizedBox(width: 20.w, height: 20.w, child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
-                      : IconButton(icon: Icon(Icons.refresh_rounded, color: Colors.white, size: 22.sp), onPressed: controller.refreshPrice)),
-                IconButton(
-                  icon: Icon(Icons.delete_outline_rounded, color: Colors.white70, size: 22.sp),
-                  onPressed: () => _showDeleteDialog(context, card.playerName),
+            // ── Combined header (no separate AppBar — no seam) ─────────────
+            SliverToBoxAdapter(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: isSold
+                      ? const LinearGradient(colors: [Color(0xFF5A6A8A), Color(0xFF8A9AB2)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+                      : card.isTargetReached ? AppColors.profitGradient : AppColors.heroGradient,
                 ),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: isSold
-                        ? const LinearGradient(colors: [Color(0xFF5A6A8A), Color(0xFF8A9AB2)], begin: Alignment.topLeft, end: Alignment.bottomRight)
-                        : card.isTargetReached
-                        ? AppColors.profitGradient
-                        : AppColors.heroGradient,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 20.h),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(4.w, 4.h, 4.w, 18.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Back + actions row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // Status badge
-                            if (isSold)
-                              _heroBadge('✅ SOLD', Colors.white.withOpacity(0.25))
-                            else if (card.isTargetReached)
-                              _heroBadge('🎯 TARGET REACHED — Time to Sell!', Colors.white.withOpacity(0.2)),
-                            if (isSold || card.isTargetReached) SizedBox(height: 8.h),
-                            Text(card.playerName,
-                                style: GoogleFonts.inter(fontSize: 22.sp, fontWeight: FontWeight.w800, color: Colors.white)),
-                            SizedBox(height: 4.h),
-                            Text('${card.year}  •  ${card.setName ?? ""}${card.grade != null ? "  •  ${card.grade}" : ""}',
-                                style: GoogleFonts.inter(fontSize: 13.sp, color: Colors.white70)),
-                            if (isSold && card.soldPrice != null) ...[
-                              SizedBox(height: 8.h),
-                              Text('Sold for ${fmt.format(card.soldPrice!)}',
-                                  style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: Colors.white)),
-                            ],
+                            IconButton(
+                              icon: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20.sp),
+                              onPressed: Get.back,
+                            ),
+                            Row(children: [
+                              if (!isSold)
+                                Obx(() => controller.isRefreshing.value
+                                    ? Padding(padding: EdgeInsets.all(14.w),
+                                    child: SizedBox(width: 20.w, height: 20.w, child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
+                                    : IconButton(icon: Icon(Icons.refresh_rounded, color: Colors.white, size: 22.sp), onPressed: controller.refreshPrice)),
+                              IconButton(
+                                icon: Icon(Icons.delete_outline_rounded, color: Colors.white70, size: 22.sp),
+                                onPressed: () => _showDeleteDialog(context, card.playerName),
+                              ),
+                            ]),
                           ],
                         ),
-                      ),
-                    ],
+                        // Badge + name
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (isSold)
+                                _heroBadge('✅ SOLD', Colors.white.withOpacity(0.25))
+                              else if (card.isTargetReached)
+                                _heroBadge('🎯 TARGET REACHED', Colors.white.withOpacity(0.2)),
+                              if (isSold || card.isTargetReached) SizedBox(height: 8.h),
+                              Text(card.playerName,
+                                  style: GoogleFonts.inter(fontSize: 22.sp, fontWeight: FontWeight.w800, color: Colors.white)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../data/models/card_model.dart';
 import '../../data/services/api_service.dart';
+import '../dashboard/dashboard_controller.dart';
 
 class CollectionController extends GetxController {
   final _api = Get.find<ApiService>();
@@ -53,6 +54,14 @@ class CollectionController extends GetxController {
   Future<void> deleteCard(String id) async {
     await _api.deleteCard(id);
     cards.removeWhere((c) => c.id == id);
+    // Sync dashboard so it updates instantly without needing a reload
+    if (Get.isRegistered<dynamic>(tag: null) || true) {
+      try {
+        final dashboard = Get.find<DashboardController>();
+        dashboard.cards.removeWhere((c) => c.id == id);
+        dashboard.cards.refresh();
+      } catch (_) {}
+    }
   }
 
   @override

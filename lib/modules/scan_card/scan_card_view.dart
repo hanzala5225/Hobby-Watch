@@ -19,6 +19,7 @@ class ScanCardView extends GetView<ScanCardController> {
         case ScanStep.processing: return _ProcessingStep(c: controller);
         case ScanStep.results:    return _ResultsStep(c: controller);
         case ScanStep.confirm:    return _ConfirmStep(c: controller);
+        case ScanStep.manual:     return _ManualStep(c: controller);
       }
     });
   }
@@ -560,40 +561,20 @@ class _CardDetailSheet extends StatelessWidget {
                               style: GoogleFonts.inter(fontSize: 15.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary, height: 1.4)),
                           SizedBox(height: 16.h),
 
-                          // Price + grade info row
-                          Row(children: [
-                            // Price box
-                            Expanded(
-                              child: Container(
-                                padding: EdgeInsets.all(14.w),
-                                decoration: BoxDecoration(
-                                  gradient: AppColors.heroGradient,
-                                  borderRadius: BorderRadius.circular(14.r),
-                                ),
-                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Text('eBay Price', style: GoogleFonts.inter(fontSize: 11.sp, color: Colors.white70)),
-                                  SizedBox(height: 4.h),
-                                  Text(fmt.format(item.price),
-                                      style: GoogleFonts.inter(fontSize: 22.sp, fontWeight: FontWeight.w800, color: Colors.white)),
-                                ]),
-                              ),
-                            ),
-                            SizedBox(width: 10.w),
-                            // Grade/condition box
-                            Expanded(
-                              child: Container(
-                                padding: EdgeInsets.all(14.w),
-                                decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(14.r), border: Border.all(color: AppColors.border)),
-                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Text('Condition', style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted)),
-                                  SizedBox(height: 4.h),
-                                  Text(gradeInfo ?? item.condition ?? 'Ungraded',
-                                      style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700,
-                                          color: gradeInfo != null ? _gradeColor(gradeInfo) : AppColors.textSecondary)),
-                                ]),
-                              ),
-                            ),
-                          ]),
+                          // Price box — full width, clean
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(16.w),
+                            decoration: BoxDecoration(gradient: AppColors.heroGradient, borderRadius: BorderRadius.circular(14.r)),
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text('eBay Price', style: GoogleFonts.inter(fontSize: 11.sp, color: Colors.white70)),
+                              SizedBox(height: 4.h),
+                              Text(fmt.format(item.price),
+                                  style: GoogleFonts.inter(fontSize: 26.sp, fontWeight: FontWeight.w800, color: Colors.white)),
+                              if (item.hasBestOffer)
+                                Text('Best Offer also accepted', style: GoogleFonts.inter(fontSize: 10.sp, color: Colors.white70)),
+                            ]),
+                          ),
 
                           SizedBox(height: 16.h),
 
@@ -616,13 +597,47 @@ class _CardDetailSheet extends StatelessWidget {
                             SizedBox(height: 16.h),
                           ],
 
-                          // Detail rows
+                          // ── Info rows ─────────────────────────────────
                           Container(
-                            decoration: BoxDecoration(color: AppColors.bgDark, borderRadius: BorderRadius.circular(14.r), border: Border.all(color: AppColors.border)),
+                            decoration: BoxDecoration(
+                              color: AppColors.bgDark,
+                              borderRadius: BorderRadius.circular(14.r),
+                              border: Border.all(color: AppColors.border),
+                            ),
                             child: Column(children: [
-                              _detailRow(Icons.sell_outlined, 'Item ID', item.itemId.split('|').first),
-                              if (item.condition != null && item.condition!.isNotEmpty)
-                                _detailRow(Icons.star_outline_rounded, 'Listed Condition', item.condition!),
+                              _detailRow(
+                                Icons.local_shipping_outlined, 'Shipping',
+                                item.isFreeShipping ? 'Free'
+                                    : item.shippingCostType == 'FIXED' && item.shippingCost != null
+                                    ? '\$${item.shippingCost!.toStringAsFixed(2)}'
+                                    : 'Calculated at checkout',
+                                valueColor: item.isFreeShipping ? const Color(0xFF2ECC71) : null,
+                              ),
+                              if (item.hasBestOffer) ...[
+                                Divider(height: 1, color: AppColors.divider, indent: 14.w, endIndent: 14.w),
+                                _detailRow(Icons.handshake_outlined, 'Best Offer', 'Available'),
+                              ],
+                              if (item.sellerUsername != null) ...[
+                                Divider(height: 1, color: AppColors.divider, indent: 14.w, endIndent: 14.w),
+                                _detailRow(Icons.storefront_outlined, 'Seller', item.sellerUsername!),
+                              ],
+                              if (item.sellerFeedbackPct != null) ...[
+                                Divider(height: 1, color: AppColors.divider, indent: 14.w, endIndent: 14.w),
+                                _detailRow(Icons.star_rounded, 'Feedback',
+                                  '${item.sellerFeedbackPct!.toStringAsFixed(1)}%'
+                                      '${item.sellerFeedbackScore != null ? " (${item.sellerFeedbackScore})" : ""}',
+                                  valueColor: item.sellerFeedbackPct! >= 99 ? const Color(0xFF2ECC71) : null,
+                                ),
+                              ],
+                              if (item.topRatedSeller) ...[
+                                Divider(height: 1, color: AppColors.divider, indent: 14.w, endIndent: 14.w),
+                                _detailRow(Icons.verified_rounded, 'Badge', 'Top Rated Seller',
+                                    valueColor: const Color(0xFF2ECC71)),
+                              ],
+                              if (item.country != null) ...[
+                                Divider(height: 1, color: AppColors.divider, indent: 14.w, endIndent: 14.w),
+                                _detailRow(Icons.location_on_outlined, 'Ships from', item.country!),
+                              ],
                             ]),
                           ),
 
@@ -684,18 +699,28 @@ class _CardDetailSheet extends StatelessWidget {
     );
   }
 
-  Widget _detailRow(IconData icon, String label, String value) {
+  Widget _detailRow(IconData icon, String label, String value, {Color? valueColor}) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-      child: Row(children: [
-        Icon(icon, color: AppColors.textMuted, size: 16.sp),
-        SizedBox(width: 10.w),
-        Text(label, style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary)),
-        const Spacer(),
-        Flexible(child: Text(value, textAlign: TextAlign.right,
-            style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-            maxLines: 2, overflow: TextOverflow.ellipsis)),
-      ]),
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, color: AppColors.textMuted, size: 15.sp),
+          SizedBox(width: 10.w),
+          SizedBox(
+            width: 80.w,
+            child: Text(label,
+                style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary)),
+          ),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(value,
+                style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w600,
+                    color: valueColor ?? AppColors.textPrimary),
+                overflow: TextOverflow.ellipsis),
+          ),
+        ],
+      ),
     );
   }
 
@@ -948,6 +973,165 @@ class _ConfirmStep extends StatelessWidget {
     );
   }
 }
+
+// ── STEP: Manual Entry ───────────────────────────────────────────────────────
+class _ManualStep extends StatelessWidget {
+  final ScanCardController c;
+  const _ManualStep({required this.c});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      appBar: AppBar(
+        backgroundColor: AppColors.bgDark,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: AppColors.primary, size: 20.sp),
+          onPressed: c.goBack,
+        ),
+        title: Text('Add Card Manually',
+            style: GoogleFonts.inter(fontSize: 18.sp, fontWeight: FontWeight.w700, color: AppColors.primary)),
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(20.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Info banner
+            Container(
+              padding: EdgeInsets.all(14.w),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withOpacity(0.07),
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: AppColors.accent.withOpacity(0.2)),
+              ),
+              child: Row(children: [
+                Icon(Icons.edit_note_rounded, color: AppColors.accent, size: 20.sp),
+                SizedBox(width: 10.w),
+                Expanded(child: Text(
+                  'Fill in what you know. The more detail you add, the better the eBay price estimate.',
+                  style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary, height: 1.4),
+                )),
+              ]),
+            ),
+
+            SizedBox(height: 24.h),
+
+            _sectionLabel('Card Identity'),
+            SizedBox(height: 10.h),
+
+            Container(
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: AppColors.bgCard,
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(children: [
+                _field('Player Name', c.playerNameController, Icons.person_outline_rounded, 'e.g. Michael Jordan', TextInputType.text),
+                Divider(color: AppColors.divider, height: 20.h),
+                _field('Year', c.yearController, Icons.calendar_today_outlined, 'e.g. 1996', TextInputType.number),
+                Divider(color: AppColors.divider, height: 20.h),
+                _field('Brand / Set', c.setNameController, Icons.layers_outlined, 'e.g. Topps Chrome', TextInputType.text),
+              ]),
+            ),
+
+            SizedBox(height: 32.h),
+
+            // Two options: search eBay or go straight to add
+            Text('What would you like to do next?',
+                style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            SizedBox(height: 12.h),
+
+            // Search eBay button
+            GestureDetector(
+              onTap: () {
+                final q = [
+                  c.yearController.text.trim(),
+                  c.setNameController.text.trim(),
+                  c.playerNameController.text.trim(),
+                ].where((s) => s.isNotEmpty).join(' ');
+                if (q.isEmpty) {
+                  Get.snackbar('Fill in details', 'Add at least a player name to search.',
+                      snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16), borderRadius: 12);
+                  return;
+                }
+                c.searchQueryController.text = q;
+                c.retrySearch();
+              },
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 15.h),
+                decoration: BoxDecoration(
+                  gradient: AppColors.heroGradient,
+                  borderRadius: BorderRadius.circular(14.r),
+                  boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 14, offset: const Offset(0, 5))],
+                ),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(Icons.search_rounded, color: Colors.white, size: 20.sp),
+                  SizedBox(width: 10.w),
+                  Text('Search eBay for price estimate',
+                      style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: Colors.white)),
+                ]),
+              ),
+            ),
+
+            SizedBox(height: 12.h),
+
+            // Skip straight to add
+            GestureDetector(
+              onTap: c.goManualAdd,
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 15.h),
+                decoration: BoxDecoration(
+                  color: AppColors.bgCard,
+                  borderRadius: BorderRadius.circular(14.r),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 20.sp),
+                  SizedBox(width: 10.w),
+                  Text('Skip search — set price manually',
+                      style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                ]),
+              ),
+            ),
+
+            SizedBox(height: 40.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionLabel(String text) => Text(text,
+      style: GoogleFonts.inter(fontSize: 11.sp, fontWeight: FontWeight.w700,
+          color: AppColors.textMuted, letterSpacing: 0.8));
+
+  Widget _field(String label, TextEditingController ctrl, IconData icon, String hint, TextInputType type) {
+    return Row(children: [
+      Icon(icon, color: AppColors.textMuted, size: 17.sp),
+      SizedBox(width: 10.w),
+      SizedBox(width: 80.w, child: Text(label, style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textMuted))),
+      Expanded(
+        child: TextFormField(
+          controller: ctrl,
+          keyboardType: type,
+          style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.border),
+            border: InputBorder.none, enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none, filled: false,
+            isCollapsed: true, contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      ),
+    ]);
+  }
+}
+
 
 Widget _tip(String text) {
   return Padding(

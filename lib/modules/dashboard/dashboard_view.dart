@@ -408,9 +408,9 @@ class DashboardView extends GetView<DashboardController> {
                   SizedBox(height: 6.h),
                   _drawerTile(Icons.style_rounded,         'My Collection',   'All your tracked cards',     AppColors.accent,   () { Get.back(); Get.toNamed(AppRoutes.collection); }),
                   SizedBox(height: 6.h),
-                  _drawerTile(Icons.sell_rounded,          'Sold History',    'Cards you\'ve sold + P&L',   const Color(0xFF2ECC71), () { Get.back(); Get.toNamed(AppRoutes.soldHistory); }),
+                  _drawerTile(Icons.sell_rounded,          'Sold History',    'Cards you\'ve sold + P&L',   AppColors.textSecondary, () { Get.back(); Get.toNamed(AppRoutes.soldHistory); }),
                   SizedBox(height: 6.h),
-                  _drawerTile(Icons.notifications_rounded, 'Notifications',   'Price alerts & updates',     const Color(0xFF6C63FF), () { Get.back(); Get.toNamed(AppRoutes.notifications); }),
+                  _drawerTile(Icons.notifications_rounded, 'Notifications',   'Price alerts & updates',     AppColors.textSecondary, () { Get.back(); Get.toNamed(AppRoutes.notifications); }),
 
                   SizedBox(height: 18.h),
                   _drawerGroupLabel('ACCOUNT'),

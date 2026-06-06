@@ -7,7 +7,7 @@ import '../../data/services/api_service.dart';
 import '../../data/services/ocr_service.dart';
 import '../routes/app_routes.dart';
 
-enum ScanStep { choose, processing, results, confirm }
+enum ScanStep { choose, processing, results, confirm, manual }
 
 class ScanCardController extends GetxController {
   final _ocr  = Get.find<OcrService>();
@@ -56,7 +56,11 @@ class ScanCardController extends GetxController {
 
   void enterManually() {
     isManualMode.value = true;
-    currentStep.value = ScanStep.results;
+    // Clear any previous scan data
+    playerNameController.clear();
+    yearController.clear();
+    setNameController.clear();
+    currentStep.value = ScanStep.manual;
   }
 
   Future<void> _processImage(File f) async {
@@ -130,12 +134,16 @@ class ScanCardController extends GetxController {
 
   void goBack() {
     switch (currentStep.value) {
+      case ScanStep.manual:
+        currentStep.value = ScanStep.choose;
+        isManualMode.value = false;
+        break;
       case ScanStep.results:
         currentStep.value = ScanStep.choose;
         isManualMode.value = false;
         break;
       case ScanStep.confirm:
-        currentStep.value = ScanStep.results;
+        currentStep.value = isManualMode.value ? ScanStep.manual : ScanStep.results;
         break;
       default:
         Get.back();

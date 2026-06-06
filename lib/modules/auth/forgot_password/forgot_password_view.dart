@@ -5,8 +5,10 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../app/theme/app_theme.dart';
 import 'forgot_password_controller.dart';
 
-class ForgotPasswordView extends GetView<ForgotPasswordController> {
+class ForgotPasswordView extends StatelessWidget {
   const ForgotPasswordView({super.key});
+
+  ForgotPasswordController get c => Get.find<ForgotPasswordController>();
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +25,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 28.w),
           child: Form(
-            key: controller.formKey,
+            key: c.formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -68,7 +70,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                 _label('Registered Email'),
                 SizedBox(height: 8.h),
                 TextFormField(
-                  controller: controller.emailController,
+                  controller: c.emailController,
                   keyboardType: TextInputType.emailAddress,
                   style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14.sp),
                   validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
@@ -84,8 +86,8 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                 _label('New Password'),
                 SizedBox(height: 8.h),
                 Obx(() => TextFormField(
-                  controller: controller.newPassController,
-                  obscureText: controller.obscureNew.value,
+                  controller: c.newPassController,
+                  obscureText: c.obscureNew.value,
                   style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14.sp),
                   validator: (v) => (v == null || v.length < 8) ? 'At least 8 characters' : null,
                   decoration: InputDecoration(
@@ -93,9 +95,9 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                     prefixIcon: Icon(Icons.lock_outline, color: AppColors.textMuted, size: 19.sp),
                     suffixIcon: IconButton(
                       icon: Icon(
-                          controller.obscureNew.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          c.obscureNew.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                           color: AppColors.textMuted, size: 19.sp),
-                      onPressed: () => controller.obscureNew.value = !controller.obscureNew.value,
+                      onPressed: () => c.obscureNew.value = !c.obscureNew.value,
                     ),
                   ),
                 )),
@@ -106,10 +108,10 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                 _label('Confirm New Password'),
                 SizedBox(height: 8.h),
                 Obx(() => TextFormField(
-                  controller: controller.confirmController,
-                  obscureText: controller.obscureConfirm.value,
+                  controller: c.confirmController,
+                  obscureText: c.obscureConfirm.value,
                   style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14.sp),
-                  validator: (v) => v != controller.newPassController.text
+                  validator: (v) => v != c.newPassController.text
                       ? 'Passwords do not match'
                       : null,
                   decoration: InputDecoration(
@@ -117,9 +119,9 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                     prefixIcon: Icon(Icons.lock_outline, color: AppColors.textMuted, size: 19.sp),
                     suffixIcon: IconButton(
                       icon: Icon(
-                          controller.obscureConfirm.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          c.obscureConfirm.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                           color: AppColors.textMuted, size: 19.sp),
-                      onPressed: () => controller.obscureConfirm.value = !controller.obscureConfirm.value,
+                      onPressed: () => c.obscureConfirm.value = !c.obscureConfirm.value,
                     ),
                   ),
                 )),
@@ -128,20 +130,20 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
 
                 // Submit button
                 Obx(() => GestureDetector(
-                  onTap: controller.isLoading.value ? null : controller.resetPassword,
+                  onTap: c.isLoading.value ? null : c.resetPassword,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     height: 54.h,
                     decoration: BoxDecoration(
-                      gradient: controller.isLoading.value ? null : AppColors.heroGradient,
-                      color: controller.isLoading.value ? AppColors.border : null,
+                      gradient: c.isLoading.value ? null : AppColors.heroGradient,
+                      color: c.isLoading.value ? AppColors.border : null,
                       borderRadius: BorderRadius.circular(14.r),
-                      boxShadow: controller.isLoading.value ? [] : [
+                      boxShadow: c.isLoading.value ? [] : [
                         BoxShadow(color: AppColors.primary.withOpacity(0.28), blurRadius: 18, offset: const Offset(0, 6)),
                       ],
                     ),
                     child: Center(
-                      child: controller.isLoading.value
+                      child: c.isLoading.value
                           ? SizedBox(width: 22.w, height: 22.w,
                           child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2.5))
                           : Text('Reset Password',

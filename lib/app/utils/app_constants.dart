@@ -5,7 +5,7 @@ class AppConstants {
   // ── API BASE URL ──────────────────────────────────────────────────────────
   //
   // FOR ANDROID EMULATOR → use 10.0.2.2 (maps to host machine's localhost)
-  static const String baseUrl = 'http://10.0.2.2:5266/api';
+  static const String baseUrl = 'https://hobby-watch-apis.onrender.com/api';
   //
   // FOR iOS SIMULATOR → uncomment this and comment the line above:
   // static const String baseUrl = 'http://localhost:5266/api';
