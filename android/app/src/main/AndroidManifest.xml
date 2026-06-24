@@ -13,6 +13,18 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!-- Required for url_launcher to open browser links on Android 11+ -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+    </queries>
+
     <application
         android:label="Hobby Watch"
         android:name="${applicationName}"
@@ -50,27 +62,14 @@
             android:name="flutterEmbedding"
             android:value="2"/>
 
-        <!--
-            FCM notification icon — used when app is in background or terminated.
-            Must point to a white flat drawable (NOT @mipmap/ic_launcher).
-            Android ignores colored pixels and renders as white silhouette.
-        -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_notification"/>
 
-        <!--
-            Tint color applied to the notification icon.
-            References @color/notification_color from res/values/colors.xml
-        -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/notification_color"/>
 
-        <!--
-            Default channel for FCM notifications (Android 8+ / Oreo+).
-            Must match the channel ID used in flutter_local_notifications.
-        -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="hobby_watch_alerts"/>
