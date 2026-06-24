@@ -8,8 +8,8 @@ import 'data/services/ocr_service.dart';
 import 'modules/routes/app_pages.dart';
 
 // ── Firebase: uncomment after setting up Firebase ─────────────────────────
-// import 'package:firebase_core/firebase_core.dart';
-// import 'data/services/notification_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'data/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,14 +22,14 @@ void main() async {
   ));
 
   // ── Firebase init (uncomment after adding google-services.json / GoogleService-Info.plist) ──
-  // await Firebase.initializeApp();
+  await Firebase.initializeApp();
 
   // Register global services
   Get.put(ApiService());
   Get.put(OcrService());
 
   // ── Firebase notifications (uncomment after Firebase init) ────────────────
-  // Get.put(NotificationService());
+  Get.put(NotificationService());
 
   runApp(const HobbyWatchApp());
 }

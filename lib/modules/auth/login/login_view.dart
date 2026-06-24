@@ -6,8 +6,10 @@ import '../../../app/theme/app_theme.dart';
 import '../../routes/app_routes.dart';
 import 'login_controller.dart';
 
-class LoginView extends GetView<LoginController> {
+class LoginView extends StatelessWidget {
   const LoginView({super.key});
+
+  LoginController get c => Get.find<LoginController>();
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +19,7 @@ class LoginView extends GetView<LoginController> {
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 28.w),
           child: Form(
-            key: controller.formKey,
+            key: c.formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -58,11 +60,10 @@ class LoginView extends GetView<LoginController> {
 
                 SizedBox(height: 40.h),
 
-                // Email
                 _FieldLabel('Email Address'),
                 SizedBox(height: 8.h),
                 TextFormField(
-                  controller: controller.emailController,
+                  controller: c.emailController,
                   keyboardType: TextInputType.emailAddress,
                   style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14.sp),
                   validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
@@ -74,12 +75,11 @@ class LoginView extends GetView<LoginController> {
 
                 SizedBox(height: 20.h),
 
-                // Password
                 _FieldLabel('Password'),
                 SizedBox(height: 8.h),
                 Obx(() => TextFormField(
-                  controller: controller.passwordController,
-                  obscureText: controller.obscurePassword.value,
+                  controller: c.passwordController,
+                  obscureText: c.obscurePassword.value,
                   style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14.sp),
                   validator: (v) => (v == null || v.length < 6) ? 'Password must be at least 6 characters' : null,
                   decoration: InputDecoration(
@@ -87,26 +87,24 @@ class LoginView extends GetView<LoginController> {
                     prefixIcon: Icon(Icons.lock_outline, color: AppColors.textMuted, size: 19.sp),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        controller.obscurePassword.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        c.obscurePassword.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                         color: AppColors.textMuted, size: 19.sp,
                       ),
-                      onPressed: controller.togglePassword,
+                      onPressed: c.togglePassword,
                     ),
                   ),
                 )),
 
                 SizedBox(height: 36.h),
 
-                // Sign in button
                 Obx(() => _PrimaryButton(
                   label: 'Sign In',
-                  isLoading: controller.isLoading.value,
-                  onTap: controller.login,
+                  isLoading: c.isLoading.value,
+                  onTap: c.login,
                 )),
 
                 SizedBox(height: 16.h),
 
-                // Forgot password
                 Center(
                   child: GestureDetector(
                     onTap: () => Get.toNamed(AppRoutes.forgotPassword),
@@ -117,7 +115,6 @@ class LoginView extends GetView<LoginController> {
 
                 SizedBox(height: 24.h),
 
-                // Divider
                 Row(children: [
                   const Expanded(child: Divider(color: AppColors.border)),
                   Padding(
@@ -129,7 +126,6 @@ class LoginView extends GetView<LoginController> {
 
                 SizedBox(height: 28.h),
 
-                // Create account
                 Center(
                   child: GestureDetector(
                     onTap: () => Get.toNamed(AppRoutes.signup),
@@ -154,7 +150,6 @@ class LoginView extends GetView<LoginController> {
 
                 SizedBox(height: 40.h),
 
-                // Terms — no underline, subtle
                 Center(
                   child: Wrap(
                     alignment: WrapAlignment.center,

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app/utils/app_constants.dart';
@@ -9,11 +10,10 @@ import '../../routes/app_routes.dart';
 class LoginController extends GetxController {
   final _api = Get.find<ApiService>();
   final formKey = GlobalKey<FormState>();
-  late final emailController    = TextEditingController();
-  late final passwordController = TextEditingController();
+  final emailController    = TextEditingController();
+  final passwordController = TextEditingController();
   final isLoading       = false.obs;
   final obscurePassword = true.obs;
-  bool _disposed = false;
 
   void togglePassword() => obscurePassword.value = !obscurePassword.value;
 
@@ -28,8 +28,16 @@ class LoginController extends GetxController {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(AppConstants.keyAccessToken, auth.accessToken);
       await prefs.setString(AppConstants.keyRefreshToken, auth.refreshToken);
-      // ── Save user data for drawer/settings display ──────────────────────
       await prefs.setString(AppConstants.keyUser, jsonEncode(auth.user.toJson()));
+
+      // Now JWT is saved — register FCM token while we have auth
+      try {
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null) {
+          await _api.updateFcmToken(fcmToken);
+        }
+      } catch (_) {} // non-fatal
+
       Get.offAllNamed(AppRoutes.dashboard);
     } catch (e) {
       Get.snackbar(
@@ -52,11 +60,8 @@ class LoginController extends GetxController {
 
   @override
   void onClose() {
-    if (!_disposed) {
-      _disposed = true;
-      emailController.dispose();
-      passwordController.dispose();
-    }
+    emailController.dispose();
+    passwordController.dispose();
     super.onClose();
   }
 }

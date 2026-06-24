@@ -21,7 +21,6 @@ class ApiService extends GetxService {
       headers: {'Content-Type': 'application/json'},
     ));
 
-    // ── Interceptor: attach JWT, handle 401 ──────────────────────────────
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final prefs = await SharedPreferences.getInstance();
@@ -33,10 +32,19 @@ class ApiService extends GetxService {
       },
       onError: (DioException e, handler) async {
         if (e.response?.statusCode == 401) {
+          // Skip force-logout for these endpoints — pre-login or fire-and-forget
+          final path = e.requestOptions.path;
+          if (path.contains('/auth/fcm-token') ||
+              path.contains('/auth/login') ||
+              path.contains('/auth/register') ||
+              path.contains('/auth/refresh') ||
+              path.contains('/auth/reset-password')) {
+            return handler.next(e);
+          }
+
           // Try silent token refresh
           final refreshed = await _tryRefreshToken();
           if (refreshed) {
-            // Retry original request with new token
             final prefs = await SharedPreferences.getInstance();
             final newToken = prefs.getString(AppConstants.keyAccessToken);
             e.requestOptions.headers['Authorization'] = 'Bearer $newToken';
@@ -55,7 +63,8 @@ class ApiService extends GetxService {
     ));
   }
 
-  // ── Silent token refresh ────────────────────────────────────────────────
+  // ─── Token Refresh ────────────────────────────────────────────────────────
+
   Future<bool> _tryRefreshToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -80,7 +89,7 @@ class ApiService extends GetxService {
     return false;
   }
 
-  // ─── AUTH ─────────────────────────────────────────────────────────────────
+  // ─── Auth ─────────────────────────────────────────────────────────────────
 
   Future<AuthResponse> login(String email, String password) async {
     final res = await _dio.post('/auth/login', data: {
@@ -119,12 +128,29 @@ class ApiService extends GetxService {
   }
 
   Future<void> deleteAccount() async {
-    // Soft delete — implemented via a logout + account deletion endpoint
-    // The backend schedules actual deletion after 24h
     await _dio.delete('/auth/account');
   }
 
-  // ─── CARDS ────────────────────────────────────────────────────────────────
+  Future<UserModel> updateProfile(Map<String, dynamic> data) async {
+    final res = await _dio.put('/auth/profile', data: data);
+    return UserModel.fromJson(res.data['data'] ?? res.data);
+  }
+
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    await _dio.post('/auth/change-password', data: {
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+    });
+  }
+
+  Future<void> resetPassword(String email, String newPassword) async {
+    await _dio.post('/auth/reset-password', data: {
+      'email': email,
+      'newPassword': newPassword,
+    });
+  }
+
+  // ─── Cards ────────────────────────────────────────────────────────────────
 
   Future<({List<CardModel> cards, PortfolioSummary summary})> getCards({
     int page = 1,
@@ -192,41 +218,58 @@ class ApiService extends GetxService {
     return EbaySearchResponse.fromJson(res.data);
   }
 
-  // ─── NOTIFICATIONS ────────────────────────────────────────────────────────
+  // ─── Notifications ────────────────────────────────────────────────────────
 
   Future<List<Map<String, dynamic>>> getNotifications({int page = 1}) async {
-    final res = await _dio.get('/notifications', queryParameters: {'page': page, 'pageSize': 30});
+    final res = await _dio.get(
+      '/notifications',
+      queryParameters: {'page': page, 'pageSize': 30},
+    );
     final data = res.data['data'];
     return List<Map<String, dynamic>>.from(data['notifications'] ?? []);
+  }
+  Future<void> markNotificationRead(String id) async {       // ← ADD THIS
+    await _dio.patch('/notifications/$id/read');
   }
 
   Future<void> markAllNotificationsRead() async {
     await _dio.post('/notifications/mark-all-read');
   }
 
-  // ─── CONFIG ───────────────────────────────────────────────────────────────
+  /// Saves a received FCM message to the backend notifications table
+  /// so it appears in the in-app notification screen.
+  ///
+  /// [fcmMessageId] is used for deduplication on the backend — safe to call
+  /// from onMessage, onMessageOpenedApp, and getInitialMessage without
+  /// worrying about inserting duplicates.
+  Future<void> saveReceivedNotification({
+    required String title,
+    required String body,
+    String type = 'campaign',
+    Map<String, dynamic> payload = const {},
+    String? fcmMessageId,
+  }) async {
+    try {
+      await _dio.post('/notifications/received', data: {
+        'title': title,
+        'body': body,
+        'type': type,
+        // Cast all values to String — FCM data payload values are always strings,
+        // but the map type may be dynamic; backend expects Map<string, string>.
+        'payload': payload.map((k, v) => MapEntry(k, v.toString())),
+        if (fcmMessageId != null) 'fcmMessageId': fcmMessageId,
+      });
+    } catch (e) {
+      // Non-fatal — notification already delivered to device, just won't
+      // appear in in-app screen if this fails.
+      _log.w('saveReceivedNotification failed: $e');
+    }
+  }
+
+  // ─── App Config ───────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> getAppConfig() async {
     final res = await _dio.get('/config');
     return res.data['data'] ?? {};
-  }
-
-  Future<void> resetPassword(String email, String newPassword) async {
-    await _dio.post('/auth/reset-password', data: {
-      'email': email,
-      'newPassword': newPassword,
-    });
-  }
-
-  Future<UserModel> updateProfile(Map<String, dynamic> data) async {
-    final res = await _dio.put('/auth/profile', data: data);
-    return UserModel.fromJson(res.data['data'] ?? res.data);
-  }
-
-  Future<void> changePassword(String currentPassword, String newPassword) async {
-    await _dio.post('/auth/change-password', data: {
-      'currentPassword': currentPassword,
-      'newPassword': newPassword,
-    });
   }
 }

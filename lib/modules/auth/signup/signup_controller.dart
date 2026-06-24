@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app/utils/app_constants.dart';
@@ -8,15 +9,14 @@ import '../../routes/app_routes.dart';
 
 class SignupController extends GetxController {
   final _api = Get.find<ApiService>();
-  final formKey        = GlobalKey<FormState>();
-  late final nameController     = TextEditingController();
-  late final emailController    = TextEditingController();
-  late final passwordController = TextEditingController();
-  late final confirmController  = TextEditingController();
+  final formKey         = GlobalKey<FormState>();
+  final nameController     = TextEditingController();
+  final emailController    = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmController  = TextEditingController();
   final isLoading       = false.obs;
   final obscurePassword  = true.obs;
   final acceptedTerms    = false.obs;
-  bool _disposed = false;
 
   void togglePassword() => obscurePassword.value = !obscurePassword.value;
   void toggleTerms()    => acceptedTerms.value = !acceptedTerms.value;
@@ -40,6 +40,15 @@ class SignupController extends GetxController {
       await prefs.setString(AppConstants.keyAccessToken, auth.accessToken);
       await prefs.setString(AppConstants.keyRefreshToken, auth.refreshToken);
       await prefs.setString(AppConstants.keyUser, jsonEncode(auth.user.toJson()));
+
+      // JWT is now saved — register FCM token
+      try {
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null) {
+          await _api.updateFcmToken(fcmToken);
+        }
+      } catch (_) {} // non-fatal
+
       Get.offAllNamed(AppRoutes.dashboard);
     } catch (e) {
       Get.snackbar('Registration Failed', _parseError(e),
@@ -57,13 +66,10 @@ class SignupController extends GetxController {
 
   @override
   void onClose() {
-    if (!_disposed) {
-      _disposed = true;
-      nameController.dispose();
-      emailController.dispose();
-      passwordController.dispose();
-      confirmController.dispose();
-    }
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmController.dispose();
     super.onClose();
   }
 }

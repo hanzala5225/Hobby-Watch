@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme/app_theme.dart';
 import '../../data/models/ebay_result_model.dart';
 import 'scan_card_controller.dart';
@@ -679,7 +680,11 @@ class _CardDetailSheet extends StatelessWidget {
                           if (item.itemUrl != null)
                             Center(
                               child: TextButton.icon(
-                                onPressed: () {}, // url_launcher can open this
+                                onPressed: ()
+                                    async {
+                                      final uri = Uri.parse(item.itemUrl!);
+                                      if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                    }, // url_launcher can open this
                                 icon: Icon(Icons.open_in_new, size: 14.sp, color: AppColors.accent),
                                 label: Text('View on eBay', style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.accent)),
                               ),

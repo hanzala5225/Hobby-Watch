@@ -2,10 +2,11 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.example.cardvault"
+    namespace = "com.hobbywatch.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,10 +21,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.cardvault"
-
+        applicationId = "com.hobbywatch.app"
         minSdk = flutter.minSdkVersion
-
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -42,11 +41,7 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
-
-    // Latin
     implementation("com.google.mlkit:text-recognition:16.0.1")
-
-    // Required by google_mlkit_text_recognition plugin
     implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
     implementation("com.google.mlkit:text-recognition-japanese:16.0.1")
     implementation("com.google.mlkit:text-recognition-korean:16.0.1")
