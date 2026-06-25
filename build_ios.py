@@ -1,4 +1,4 @@
-import os, re, plistlib, shutil, subprocess
+import os, re, plistlib, shutil, subprocess, glob
 
 # Find profile
 profile_dir = os.path.expanduser("~/Library/Developer/Xcode/UserData/Provisioning Profiles")
@@ -23,6 +23,28 @@ os.makedirs(mobile_dir, exist_ok=True)
 shutil.copy2(profile_path, os.path.join(mobile_dir, f"{uuid}.mobileprovision"))
 shutil.copy2(profile_path, os.path.join(profile_dir, f"{uuid}.mobileprovision"))
 print("Profiles installed")
+
+# Find Codemagic keychain and add to search list
+keychain_dir = os.path.expanduser("~/Library/codemagic-cli-tools/keychains")
+keychains = glob.glob(f"{keychain_dir}/*.keychain-db")
+if keychains:
+    cm_keychain = keychains[0]
+    print(f"Codemagic keychain: {cm_keychain}")
+    # Get current keychain list
+    result = subprocess.run(["security", "list-keychains"], capture_output=True, text=True)
+    current = result.stdout.strip()
+    print(f"Current keychains: {current}")
+    # Add codemagic keychain to search list
+    subprocess.run([
+        "security", "list-keychains", "-d", "user", "-s",
+        cm_keychain,
+        os.path.expanduser("~/Library/Keychains/login.keychain-db")
+    ])
+    # Unlock it
+    subprocess.run(["security", "unlock-keychain", cm_keychain])
+    print("Keychain added to search list and unlocked")
+else:
+    print("WARNING: No Codemagic keychain found!")
 
 # Write ExportOptions
 export_options = """<?xml version="1.0" encoding="UTF-8"?>
@@ -60,12 +82,8 @@ print(f"flutter build ipa --no-codesign exit code: {result.returncode}")
 pbxproj = "ios/Runner.xcodeproj/project.pbxproj"
 with open(pbxproj, "r") as f:
     proj = f.read()
-
-# Remove any existing profile specifiers
 proj = re.sub(r'\t+PROVISIONING_PROFILE = ".*?";\n', "", proj)
 proj = re.sub(r'\t+PROVISIONING_PROFILE_SPECIFIER = ".*?";\n', "", proj)
-
-# Only inject into Runner Release target (97C147071CF9000F007C117D)
 target_id = '97C147071CF9000F007C117D /* Release */'
 idx = proj.find(target_id)
 if idx >= 0:
@@ -73,14 +91,11 @@ if idx >= 0:
     end_idx = proj.find("\n\t\t\t};", bs_idx)
     inject = f'\t\t\t\tPROVISIONING_PROFILE = "{uuid}";\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "{name}";\n'
     proj = proj[:end_idx] + inject + proj[end_idx:]
-    print(f"Injected profile into Runner Release target only")
-
+    print("Injected profile into Runner Release target only")
 with open(pbxproj, "w") as f:
     f.write(proj)
 
-# Archive using xcodebuild - DO NOT pass PROVISIONING_PROFILE globally
-# Only pass CODE_SIGN_IDENTITY and DEVELOPMENT_TEAM globally
-# The profile is already set in project.pbxproj for Runner target only
+# Archive - no global profile flags, keychain is in search list
 result2 = subprocess.run([
     "xcodebuild",
     "-workspace", "ios/Runner.xcworkspace",
@@ -91,8 +106,7 @@ result2 = subprocess.run([
     "CODE_SIGN_IDENTITY=Apple Distribution",
     "DEVELOPMENT_TEAM=46CH6J94CY",
     "CODE_SIGN_STYLE=Manual",
-    "CODE_SIGNING_REQUIRED=YES",
-    "CODE_SIGNING_ALLOWED=YES",
+    "OTHER_CODE_SIGN_FLAGS=--keychain " + (keychains[0] if keychains else ""),
 ], capture_output=False)
 print(f"xcodebuild archive exit: {result2.returncode}")
 
