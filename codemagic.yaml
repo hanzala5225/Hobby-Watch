@@ -22,17 +22,19 @@ workflows:
       - name: Delete existing certificates
         script: |
           app-store-connect certificates list \
-            --type IOS_DISTRIBUTION \
+            --type DISTRIBUTION \
             --json | \
           python3 -c "
           import sys, json
-          certs = json.load(sys.stdin)
+          data = sys.stdin.read()
+          certs = json.loads(data)
           for c in certs:
               print(c['id'])
           " | while read cert_id; do
-            echo "Deleting certificate: $cert_id"
-            app-store-connect certificates revoke "$cert_id"
-          done || true
+            echo "Revoking certificate: $cert_id"
+            app-store-connect certificates revoke "$cert_id" || true
+          done
+          echo "Done revoking certificates"
       - name: Fetch signing files
         script: |
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
