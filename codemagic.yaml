@@ -44,15 +44,22 @@ workflows:
             --certificate-key "$CERTIFICATE_PRIVATE_KEY"
       - name: Add certificates to keychain
         script: keychain add-certificates
-      - name: Copy profiles to MobileDevice location
+      - name: Install provisioning profile
         script: |
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
-          cp ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision \
-             ~/Library/MobileDevice/Provisioning\ Profiles/
-      - name: Get profile name and build IPA
-        script: |
-          PROFILE_PATH=$(ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision | head -1)
-          
+          PROFILE_PATH=$(ls ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision | head -1)
+          echo "Source profile: $PROFILE_PATH"
+
+          UUID=$(python3 -c "
+          import plistlib
+          with open('$PROFILE_PATH', 'rb') as f:
+              content = f.read()
+          start = content.find(b'<?xml')
+          end = content.find(b'</plist>') + 8
+          plist = plistlib.loads(content[start:end])
+          print(plist.get('UUID', ''))
+          ")
+          echo "UUID: $UUID"
+
           PROFILE_NAME=$(python3 -c "
           import plistlib
           with open('$PROFILE_PATH', 'rb') as f:
@@ -64,22 +71,43 @@ workflows:
           ")
           echo "Profile name: $PROFILE_NAME"
 
-          # Inject profile specifier into project.pbxproj
-          python3 -c "
+          # Install to BOTH locations with UUID filename
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/${UUID}.mobileprovision
+          cp "$PROFILE_PATH" ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/${UUID}.mobileprovision
+
+          echo "Installed profiles:"
+          ls ~/Library/MobileDevice/Provisioning\ Profiles/
+          ls ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/
+
+          # Save for next step
+          echo "$PROFILE_NAME" > /tmp/profile_name.txt
+          echo "$UUID" > /tmp/profile_uuid.txt
+      - name: Build IPA
+        script: |
+          PROFILE_NAME=$(cat /tmp/profile_name.txt)
+          UUID=$(cat /tmp/profile_uuid.txt)
+          echo "Using profile: $PROFILE_NAME ($UUID)"
+
+          # Inject into pbxproj
+          python3 << PYEOF
           import re
           with open('ios/Runner.xcodeproj/project.pbxproj', 'r') as f:
               content = f.read()
-          # Add PROVISIONING_PROFILE_SPECIFIER before SWIFT_VERSION in Release Runner target
-          content = re.sub(
-              r'(97C147071CF9000F007C117D /\* Release \*/ = \{.*?buildSettings = \{.*?)(SWIFT_VERSION = 5\.0;)',
-              r'\1PROVISIONING_PROFILE_SPECIFIER = \"$PROFILE_NAME\";\n\t\t\t\t\2',
-              content,
-              flags=re.DOTALL
+          # Remove any existing PROVISIONING_PROFILE_SPECIFIER
+          content = re.sub(r'\t+PROVISIONING_PROFILE_SPECIFIER = ".*?";\n', '', content)
+          # Add to Release Runner target
+          content = content.replace(
+              '"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";\n\t\t\t\tCODE_SIGN_STYLE = Manual;\n\t\t\t\tCURRENT_PROJECT_VERSION',
+              '"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";\n\t\t\t\tCODE_SIGN_STYLE = Manual;\n\t\t\t\tPROVISIONING_PROFILE = "$(PROFILE_NAME)";\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "$(PROFILE_NAME)";\n\t\t\t\tCURRENT_PROJECT_VERSION'
           )
           with open('ios/Runner.xcodeproj/project.pbxproj', 'w') as f:
               f.write(content)
-          print('Injected profile specifier')
-          "
+          print('Done patching pbxproj')
+          PYEOF
+
+          # Patch with actual values
+          sed -i "" "s/\$(PROFILE_NAME)/$PROFILE_NAME/g" ios/Runner.xcodeproj/project.pbxproj
 
           cat > /tmp/ExportOptions.plist << PLIST
           <?xml version="1.0" encoding="UTF-8"?>
