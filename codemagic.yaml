@@ -36,13 +36,6 @@ workflows:
       - name: Set up code signing settings
         script: xcode-project use-profiles
 
-      - name: Disable automatic signing
-        script: |
-          sed -i "" "s/SWIFT_VERSION = 5.0;/SWIFT_VERSION = 5.0;\n\t\t\tCODE_SIGN_STYLE = Manual;/" \
-            ios/Runner.xcodeproj/project.pbxproj
-          sed -i "" "s/DEVELOPMENT_TEAM = \"\";/DEVELOPMENT_TEAM = 46CH6J94CY;/" \
-            ios/Runner.xcodeproj/project.pbxproj
-
       - name: Build IPA
         script: flutter build ipa --release
 
