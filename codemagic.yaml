@@ -24,7 +24,8 @@ workflows:
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --platform IOS \
             --type IOS_APP_STORE \
-            --create
+            --create \
+            --certificate-key "$APP_STORE_CONNECT_PRIVATE_KEY"
       - name: Add certificates to keychain
         script: keychain add-certificates
       - name: Set up code signing settings
