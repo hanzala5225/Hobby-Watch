@@ -4,6 +4,8 @@ workflows:
     max_build_duration: 120
     instance_type: mac_mini_m2
     environment:
+      groups:
+        - app_store_credentials
       vars:
         APP_STORE_CONNECT_ISSUER_ID: "082c19f7-97ae-4c13-9c15-47a3c7e425ea"
         APP_STORE_CONNECT_KEY_IDENTIFIER: "92L2F9K854"
