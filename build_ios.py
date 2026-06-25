@@ -60,20 +60,27 @@ print(f"flutter build ipa --no-codesign exit code: {result.returncode}")
 pbxproj = "ios/Runner.xcodeproj/project.pbxproj"
 with open(pbxproj, "r") as f:
     proj = f.read()
+
+# Remove any existing profile specifiers
 proj = re.sub(r'\t+PROVISIONING_PROFILE = ".*?";\n', "", proj)
 proj = re.sub(r'\t+PROVISIONING_PROFILE_SPECIFIER = ".*?";\n', "", proj)
-target = '97C147071CF9000F007C117D /* Release */'
-idx = proj.find(target)
+
+# Only inject into Runner Release target (97C147071CF9000F007C117D)
+target_id = '97C147071CF9000F007C117D /* Release */'
+idx = proj.find(target_id)
 if idx >= 0:
     bs_idx = proj.find("buildSettings = {", idx)
     end_idx = proj.find("\n\t\t\t};", bs_idx)
     inject = f'\t\t\t\tPROVISIONING_PROFILE = "{uuid}";\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "{name}";\n'
     proj = proj[:end_idx] + inject + proj[end_idx:]
-    print("Injected profile into Release target")
+    print(f"Injected profile into Runner Release target only")
+
 with open(pbxproj, "w") as f:
     f.write(proj)
 
-# Archive with xcodebuild
+# Archive using xcodebuild - DO NOT pass PROVISIONING_PROFILE globally
+# Only pass CODE_SIGN_IDENTITY and DEVELOPMENT_TEAM globally
+# The profile is already set in project.pbxproj for Runner target only
 result2 = subprocess.run([
     "xcodebuild",
     "-workspace", "ios/Runner.xcworkspace",
@@ -83,9 +90,9 @@ result2 = subprocess.run([
     "archive",
     "CODE_SIGN_IDENTITY=Apple Distribution",
     "DEVELOPMENT_TEAM=46CH6J94CY",
-    f"PROVISIONING_PROFILE={uuid}",
-    f"PROVISIONING_PROFILE_SPECIFIER={name}",
     "CODE_SIGN_STYLE=Manual",
+    "CODE_SIGNING_REQUIRED=YES",
+    "CODE_SIGNING_ALLOWED=YES",
 ], capture_output=False)
 print(f"xcodebuild archive exit: {result2.returncode}")
 
