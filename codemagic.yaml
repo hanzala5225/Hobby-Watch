@@ -44,15 +44,20 @@ workflows:
             --certificate-key "$CERTIFICATE_PRIVATE_KEY"
       - name: Add certificates to keychain
         script: keychain add-certificates
-      - name: Set up code signing settings
-        script: xcode-project use-profiles
+      - name: Copy profiles to MobileDevice location
+        script: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
+          cp ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision \
+             ~/Library/MobileDevice/Provisioning\ Profiles/
+          echo "Copied profiles:"
+          ls ~/Library/MobileDevice/Provisioning\ Profiles/
       - name: Get profile name and build IPA
         script: |
-          PROFILE_PATH=$(ls ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision 2>/dev/null | head -1)
+          PROFILE_PATH=$(ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision | head -1)
           echo "Profile path: $PROFILE_PATH"
-          
+
           PROFILE_NAME=$(python3 -c "
-          import plistlib, sys
+          import plistlib
           with open('$PROFILE_PATH', 'rb') as f:
               content = f.read()
           start = content.find(b'<?xml')
@@ -84,12 +89,8 @@ workflows:
           </plist>
           PLIST
 
-          # Set manual signing in project
-          ruby -e "
-          content = File.read('ios/Runner.xcodeproj/project.pbxproj')
-          content.gsub!('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
-          File.write('ios/Runner.xcodeproj/project.pbxproj', content)
-          "
+          echo "ExportOptions:"
+          cat /tmp/ExportOptions.plist
 
           flutter build ipa --release \
             --export-options-plist /tmp/ExportOptions.plist
