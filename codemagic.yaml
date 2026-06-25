@@ -15,10 +15,13 @@ workflows:
     scripts:
       - name: Get Flutter packages
         script: flutter pub get
+
       - name: Pod install
         script: cd ios && pod install
+
       - name: Set up keychain
         script: keychain initialize
+
       - name: Fetch signing files
         script: |
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
@@ -26,16 +29,26 @@ workflows:
             --type IOS_APP_STORE \
             --create \
             --certificate-key "$CERTIFICATE_PRIVATE_KEY"
+
       - name: Add certificates to keychain
         script: keychain add-certificates
+
       - name: Set up code signing settings
         script: xcode-project use-profiles
-      - name: Build IPA
+
+      - name: Disable automatic signing
         script: |
-          flutter build ipa --release \
-            --export-options-plist /Users/builder/export_options.plist
+          sed -i "" "s/SWIFT_VERSION = 5.0;/SWIFT_VERSION = 5.0;\n\t\t\tCODE_SIGN_STYLE = Manual;/" \
+            ios/Runner.xcodeproj/project.pbxproj
+          sed -i "" "s/DEVELOPMENT_TEAM = \"\";/DEVELOPMENT_TEAM = 46CH6J94CY;/" \
+            ios/Runner.xcodeproj/project.pbxproj
+
+      - name: Build IPA
+        script: flutter build ipa --release
+
     artifacts:
       - build/ios/ipa/*.ipa
+
     publishing:
       app_store_connect:
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
