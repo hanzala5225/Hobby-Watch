@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>method</key>
-    <string>app-store</string>
+    <string>app-store-connect</string>
     <key>teamID</key>
     <string>46CH6J94CY</string>
     <key>signingStyle</key>
@@ -15,5 +15,9 @@
         <key>com.hobbywatch.app</key>
         <string>Hobby Watch ios_app_store 1782408795</string>
     </dict>
+    <key>uploadBitcode</key>
+    <false/>
+    <key>uploadSymbols</key>
+    <true/>
 </dict>
 </plist>
