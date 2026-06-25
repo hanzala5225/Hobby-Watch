@@ -7,14 +7,7 @@
     <key>teamID</key>
     <string>46CH6J94CY</string>
     <key>signingStyle</key>
-    <string>manual</string>
-    <key>signingCertificate</key>
-    <string>Apple Distribution</string>
-    <key>provisioningProfiles</key>
-    <dict>
-        <key>com.hobbywatch.app</key>
-        <string>Hobby Watch ios_app_store 1782408795</string>
-    </dict>
+    <string>automatic</string>
     <key>uploadBitcode</key>
     <false/>
     <key>uploadSymbols</key>
