@@ -44,73 +44,64 @@ workflows:
             --certificate-key "$CERTIFICATE_PRIVATE_KEY"
       - name: Add certificates to keychain
         script: keychain add-certificates
-      - name: Install provisioning profile
+      - name: Install profile and patch project
         script: |
-          PROFILE_PATH=$(ls ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision | head -1)
-          echo "Source profile: $PROFILE_PATH"
+          python3 << 'PYEOF'
+          import os, re, plistlib, shutil
 
-          UUID=$(python3 -c "
-          import plistlib
-          with open('$PROFILE_PATH', 'rb') as f:
+          # Find profile
+          profile_dir = os.path.expanduser("~/Library/Developer/Xcode/UserData/Provisioning Profiles")
+          profiles = [f for f in os.listdir(profile_dir) if f.endswith(".mobileprovision")]
+          profile_path = os.path.join(profile_dir, profiles[0])
+          print(f"Profile: {profile_path}")
+
+          # Parse profile
+          with open(profile_path, "rb") as f:
               content = f.read()
-          start = content.find(b'<?xml')
-          end = content.find(b'</plist>') + 8
+          start = content.find(b"<?xml")
+          end = content.find(b"</plist>") + 8
           plist = plistlib.loads(content[start:end])
-          print(plist.get('UUID', ''))
-          ")
-          echo "UUID: $UUID"
+          uuid = plist["UUID"]
+          name = plist["Name"]
+          print(f"UUID: {uuid}")
+          print(f"Name: {name}")
 
-          PROFILE_NAME=$(python3 -c "
-          import plistlib
-          with open('$PROFILE_PATH', 'rb') as f:
-              content = f.read()
-          start = content.find(b'<?xml')
-          end = content.find(b'</plist>') + 8
-          plist = plistlib.loads(content[start:end])
-          print(plist.get('Name', ''))
-          ")
-          echo "Profile name: $PROFILE_NAME"
+          # Install with UUID filename
+          mobile_dir = os.path.expanduser("~/Library/MobileDevice/Provisioning Profiles")
+          os.makedirs(mobile_dir, exist_ok=True)
+          dest = os.path.join(mobile_dir, f"{uuid}.mobileprovision")
+          shutil.copy2(profile_path, dest)
+          dest2 = os.path.join(profile_dir, f"{uuid}.mobileprovision")
+          shutil.copy2(profile_path, dest2)
+          print(f"Installed to: {dest}")
+          print(f"Installed to: {dest2}")
 
-          # Install to BOTH locations with UUID filename
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
-          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/${UUID}.mobileprovision
-          cp "$PROFILE_PATH" ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/${UUID}.mobileprovision
+          # Patch project.pbxproj
+          pbxproj = "ios/Runner.xcodeproj/project.pbxproj"
+          with open(pbxproj, "r") as f:
+              proj = f.read()
 
-          echo "Installed profiles:"
-          ls ~/Library/MobileDevice/Provisioning\ Profiles/
-          ls ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/
+          # Remove old specifiers
+          proj = re.sub(r'\t+PROVISIONING_PROFILE = ".*?";\n', "", proj)
+          proj = re.sub(r'\t+PROVISIONING_PROFILE_SPECIFIER = ".*?";\n', "", proj)
 
-          # Save for next step
-          echo "$PROFILE_NAME" > /tmp/profile_name.txt
-          echo "$UUID" > /tmp/profile_uuid.txt
-      - name: Build IPA
-        script: |
-          PROFILE_NAME=$(cat /tmp/profile_name.txt)
-          UUID=$(cat /tmp/profile_uuid.txt)
-          echo "Using profile: $PROFILE_NAME ($UUID)"
+          # Inject into Release Runner target (97C147071CF9000F007C117D)
+          target = '97C147071CF9000F007C117D /* Release */'
+          idx = proj.find(target)
+          if idx >= 0:
+              # Find buildSettings block
+              bs_idx = proj.find("buildSettings = {", idx)
+              end_idx = proj.find("};", bs_idx)
+              insert_pos = end_idx
+              inject = f'\t\t\t\tPROVISIONING_PROFILE = "{uuid}";\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "{name}";\n'
+              proj = proj[:insert_pos] + inject + proj[insert_pos:]
+              print(f"Injected profile into Release target")
 
-          # Inject into pbxproj
-          python3 << PYEOF
-          import re
-          with open('ios/Runner.xcodeproj/project.pbxproj', 'r') as f:
-              content = f.read()
-          # Remove any existing PROVISIONING_PROFILE_SPECIFIER
-          content = re.sub(r'\t+PROVISIONING_PROFILE_SPECIFIER = ".*?";\n', '', content)
-          # Add to Release Runner target
-          content = content.replace(
-              '"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";\n\t\t\t\tCODE_SIGN_STYLE = Manual;\n\t\t\t\tCURRENT_PROJECT_VERSION',
-              '"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";\n\t\t\t\tCODE_SIGN_STYLE = Manual;\n\t\t\t\tPROVISIONING_PROFILE = "$(PROFILE_NAME)";\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "$(PROFILE_NAME)";\n\t\t\t\tCURRENT_PROJECT_VERSION'
-          )
-          with open('ios/Runner.xcodeproj/project.pbxproj', 'w') as f:
-              f.write(content)
-          print('Done patching pbxproj')
-          PYEOF
+          with open(pbxproj, "w") as f:
+              f.write(proj)
 
-          # Patch with actual values
-          sed -i "" "s/\$(PROFILE_NAME)/$PROFILE_NAME/g" ios/Runner.xcodeproj/project.pbxproj
-
-          cat > /tmp/ExportOptions.plist << PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
+          # Write ExportOptions
+          export_options = f"""<?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
@@ -125,12 +116,18 @@ workflows:
               <key>provisioningProfiles</key>
               <dict>
                   <key>com.hobbywatch.app</key>
-                  <string>$PROFILE_NAME</string>
+                  <string>{name}</string>
               </dict>
           </dict>
-          </plist>
-          PLIST
-
+          </plist>"""
+          with open("/tmp/ExportOptions.plist", "w") as f:
+              f.write(export_options)
+          print("ExportOptions written")
+          print(f"Profile name in ExportOptions: {name}")
+          PYEOF
+      - name: Build IPA
+        script: |
+          cat /tmp/ExportOptions.plist
           flutter build ipa --release \
             --export-options-plist /tmp/ExportOptions.plist
     artifacts:
