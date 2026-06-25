@@ -49,13 +49,10 @@ workflows:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
           cp ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision \
              ~/Library/MobileDevice/Provisioning\ Profiles/
-          echo "Copied profiles:"
-          ls ~/Library/MobileDevice/Provisioning\ Profiles/
       - name: Get profile name and build IPA
         script: |
           PROFILE_PATH=$(ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision | head -1)
-          echo "Profile path: $PROFILE_PATH"
-
+          
           PROFILE_NAME=$(python3 -c "
           import plistlib
           with open('$PROFILE_PATH', 'rb') as f:
@@ -66,6 +63,23 @@ workflows:
           print(plist.get('Name', ''))
           ")
           echo "Profile name: $PROFILE_NAME"
+
+          # Inject profile specifier into project.pbxproj
+          python3 -c "
+          import re
+          with open('ios/Runner.xcodeproj/project.pbxproj', 'r') as f:
+              content = f.read()
+          # Add PROVISIONING_PROFILE_SPECIFIER before SWIFT_VERSION in Release Runner target
+          content = re.sub(
+              r'(97C147071CF9000F007C117D /\* Release \*/ = \{.*?buildSettings = \{.*?)(SWIFT_VERSION = 5\.0;)',
+              r'\1PROVISIONING_PROFILE_SPECIFIER = \"$PROFILE_NAME\";\n\t\t\t\t\2',
+              content,
+              flags=re.DOTALL
+          )
+          with open('ios/Runner.xcodeproj/project.pbxproj', 'w') as f:
+              f.write(content)
+          print('Injected profile specifier')
+          "
 
           cat > /tmp/ExportOptions.plist << PLIST
           <?xml version="1.0" encoding="UTF-8"?>
@@ -88,9 +102,6 @@ workflows:
           </dict>
           </plist>
           PLIST
-
-          echo "ExportOptions:"
-          cat /tmp/ExportOptions.plist
 
           flutter build ipa --release \
             --export-options-plist /tmp/ExportOptions.plist
