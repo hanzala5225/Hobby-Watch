@@ -20,10 +20,7 @@ workflows:
       - name: Set up keychain
         script: keychain initialize
       - name: Generate certificate key
-        script: |
-          openssl genrsa -out /tmp/cert_key.pem 2048
-          echo "Generated RSA key:"
-          cat /tmp/cert_key.pem
+        script: openssl genrsa -out /tmp/cert_key.pem 2048
       - name: Fetch signing files
         script: |
           CERT_KEY=$(cat /tmp/cert_key.pem)
@@ -39,6 +36,7 @@ workflows:
       - name: Build IPA
         script: |
           flutter build ipa --release \
+            CODE_SIGNING_ALLOWED=YES \
             --export-options-plist /Users/builder/export_options.plist
     artifacts:
       - build/ios/ipa/*.ipa
