@@ -31,10 +31,10 @@ workflows:
           for c in certs:
               print(c['id'])
           " | while read cert_id; do
-            echo "Revoking certificate: $cert_id"
-            app-store-connect certificates revoke "$cert_id" || true
+            echo "Deleting certificate: $cert_id"
+            app-store-connect certificates delete "$cert_id" || true
           done
-          echo "Done revoking certificates"
+          echo "Done deleting certificates"
       - name: Fetch signing files
         script: |
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
