@@ -9,7 +9,7 @@ workflows:
       vars:
         APP_STORE_CONNECT_ISSUER_ID: "082c19f7-97ae-4c13-9c15-47a3c7e425ea"
         APP_STORE_CONNECT_KEY_IDENTIFIER: "92L2F9K854"
-        BUNDLE_ID: "com.hobbywatch.app"
+        BUNDLE_ID: "com.hobbywatch.appios"
       flutter: stable
       xcode: latest
     scripts:

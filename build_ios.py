@@ -61,7 +61,7 @@ export_options = """<?xml version="1.0" encoding="UTF-8"?>
     <string>Apple Distribution</string>
     <key>provisioningProfiles</key>
     <dict>
-        <key>com.hobbywatch.app</key>
+        <key>com.hobbywatch.appios</key>
         <string>PROFILE_NAME_PLACEHOLDER</string>
     </dict>
 </dict>

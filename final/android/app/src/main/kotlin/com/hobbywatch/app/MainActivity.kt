@@ -1,4 +1,4 @@
-package com.hobbywatch.app
+package com.hobbywatch.appios
 
 import io.flutter.embedding.android.FlutterActivity
 

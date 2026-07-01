@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.hobbywatch.app"
+    namespace = "com.hobbywatch.appios"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.hobbywatch.app"
+        applicationId = "com.hobbywatch.appios"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
