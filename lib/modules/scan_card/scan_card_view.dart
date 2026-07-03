@@ -674,22 +674,6 @@ class _CardDetailSheet extends StatelessWidget {
                             ),
                           ),
 
-                          SizedBox(height: 8.h),
-
-                          // View on eBay link
-                          if (item.itemUrl != null)
-                            Center(
-                              child: TextButton.icon(
-                                onPressed: ()
-                                    async {
-                                      final uri = Uri.parse(item.itemUrl!);
-                                      if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                    }, // url_launcher can open this
-                                icon: Icon(Icons.open_in_new, size: 14.sp, color: AppColors.accent),
-                                label: Text('View on eBay', style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.accent)),
-                              ),
-                            ),
-
                           SizedBox(height: 20.h),
                         ],
                       ),
