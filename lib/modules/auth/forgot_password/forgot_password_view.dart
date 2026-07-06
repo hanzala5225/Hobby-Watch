@@ -145,7 +145,7 @@ class ForgotPasswordView extends StatelessWidget {
                     child: Center(
                       child: c.isLoading.value
                           ? SizedBox(width: 22.w, height: 22.w,
-                          child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2.5))
+                          child: const CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2.5))
                           : Text('Reset Password',
                           style: GoogleFonts.inter(fontSize: 15.sp, fontWeight: FontWeight.w700, color: Colors.white)),
                     ),

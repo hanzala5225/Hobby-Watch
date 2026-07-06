@@ -16,7 +16,6 @@ class ForgotPasswordController extends GetxController {
   final obscureConfirm = true.obs;
 
   // No email verification in phase 1 — user just enters email + new password
-  // Backend resets it directly (no OTP/token flow yet)
   Future<void> resetPassword() async {
     if (!formKey.currentState!.validate()) return;
     isLoading.value = true;

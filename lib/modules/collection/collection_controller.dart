@@ -15,7 +15,6 @@ class CollectionController extends GetxController {
 
   List<CardModel> get filteredCards {
     final q = searchQuery.value.toLowerCase();
-    // Only show active (not sold) cards in collection
     final active = cards.where((c) => !c.isSold).toList();
     if (q.isEmpty) return active;
     return active.where((c) =>
@@ -33,7 +32,6 @@ class CollectionController extends GetxController {
     loadCards();
   }
 
-  // Called when navigating back to this screen
   void onResume() {
     loadCards();
   }

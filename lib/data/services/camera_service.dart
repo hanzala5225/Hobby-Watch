@@ -6,9 +6,6 @@ import 'package:permission_handler/permission_handler.dart';
 class CameraService extends GetxService {
   final ImagePicker _picker = ImagePicker();
 
-  /// Pick image from camera
-  /// Phase 1: Used for reference photo of the card only
-  /// Phase 2: Will be used for OCR scanning
   Future<File?> pickFromCamera() async {
     final status = await Permission.camera.request();
     if (!status.isGranted) {

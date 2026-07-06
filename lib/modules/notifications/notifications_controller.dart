@@ -27,9 +27,6 @@ class NotificationsController extends GetxController {
     }
   }
 
-
-  /// Mark a single notification as read (tapping the tile).
-  /// Updates locally immediately so the UI reacts without a reload.
   Future<void> markRead(String? id) async {
     if (id == null) return;
     try {
@@ -44,7 +41,6 @@ class NotificationsController extends GetxController {
     } catch (_) {}
   }
 
-  /// Mark all notifications as read.
   Future<void> markAllRead() async {
     try {
       await _api.markAllNotificationsRead();

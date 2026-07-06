@@ -30,7 +30,6 @@ class NotificationsView extends GetView<NotificationsController> {
         ),
         actions: [
           Obx(() {
-            // Only show "Mark all read" if there are unread notifications
             final hasUnread = controller.notifications.any(
                   (n) => !(n['isRead'] as bool? ?? false),
             );
@@ -50,17 +49,14 @@ class NotificationsView extends GetView<NotificationsController> {
         ],
       ),
       body: Obx(() {
-        // ── Loading ──────────────────────────────────────────────────────────
         if (controller.isLoading.value) {
-          return Center(
+          return const Center(
             child: CircularProgressIndicator(
               color: AppColors.accent,
               strokeWidth: 2.5,
             ),
           );
         }
-
-        // ── Empty state ──────────────────────────────────────────────────────
         if (controller.notifications.isEmpty) {
           return Center(
             child: Column(
@@ -94,7 +90,6 @@ class NotificationsView extends GetView<NotificationsController> {
           );
         }
 
-        // ── List ─────────────────────────────────────────────────────────────
         return RefreshIndicator(
           color: AppColors.accent,
           onRefresh: controller.loadNotifications,
@@ -105,8 +100,6 @@ class NotificationsView extends GetView<NotificationsController> {
             itemBuilder: (_, i) {
               final n = controller.notifications[i];
 
-              // ── Safe key reads (backend sends camelCase) ──────────────────
-              // isRead / is_read — handle both just in case
               final isRead = (n['isRead'] ?? n['is_read']) as bool? ?? false;
 
               // createdAt / created_at
@@ -244,7 +237,7 @@ class _NotificationTile extends StatelessWidget {
                 child: Container(
                   width: 8.w,
                   height: 8.w,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColors.accent,
                     shape: BoxShape.circle,
                   ),

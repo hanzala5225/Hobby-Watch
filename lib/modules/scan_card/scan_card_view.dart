@@ -167,7 +167,7 @@ class _AnimatedScanFrameState extends State<_AnimatedScanFrame> with SingleTicke
     return SizedBox(
       width: 220.w, height: 148.h,
       child: Stack(children: [
-        CustomPaint(size: Size(220.w, 148.h), painter: _CornerPainter(color: AppColors.accent)),
+        CustomPaint(size: Size(220.w, 148.h), painter: const _CornerPainter(color: AppColors.accent)),
         AnimatedBuilder(
           animation: _line,
           builder: (_, __) => Positioned(
@@ -188,9 +188,9 @@ class _CornerPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final p = Paint()..color = color..strokeWidth = 2.5..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
     const l = 24.0, r = 10.0;
-    canvas.drawLine(Offset(r, 0), Offset(l, 0), p);
-    canvas.drawArc(Rect.fromLTWH(0, 0, r*2, r*2), -1.57, -1.57, false, p);
-    canvas.drawLine(Offset(0, r), Offset(0, l), p);
+    canvas.drawLine(const Offset(r, 0), const Offset(l, 0), p);
+    canvas.drawArc(const Rect.fromLTWH(0, 0, r*2, r*2), -1.57, -1.57, false, p);
+    canvas.drawLine(const Offset(0, r), const Offset(0, l), p);
     canvas.drawLine(Offset(size.width-l, 0), Offset(size.width-r, 0), p);
     canvas.drawArc(Rect.fromLTWH(size.width-r*2, 0, r*2, r*2), -1.57, 1.57, false, p);
     canvas.drawLine(Offset(size.width, r), Offset(size.width, l), p);
@@ -330,10 +330,12 @@ class _ResultsStep extends StatelessWidget {
           Obx(() {
             final res = c.searchResponse.value;
             final err = c.errorMessage.value;
-            if (err.isNotEmpty) return Padding(
-              padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 0),
-              child: Text(err, style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.loss)),
-            );
+            if (err.isNotEmpty) {
+                return Padding(
+                padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 0),
+                child: Text(err, style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.loss)),
+              );
+            }
             if (res == null || res.avg30Day == null) return const SizedBox();
             return Padding(
               padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 0),

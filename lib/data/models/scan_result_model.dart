@@ -1,15 +1,12 @@
-/// Holds the result from Google ML Kit OCR processing
-/// After scanning a card image, OCR extracts raw text
-/// which is then cleaned into structured fields
 class ScanResultModel {
-  final String rawText;          // full OCR output
-  final String? playerName;      // extracted player name
-  final String? year;            // extracted year e.g. "1996"
-  final String? brand;           // e.g. "Topps", "Panini"
-  final String? setName;         // e.g. "Chrome", "Prizm"
-  final String? cardNumber;      // e.g. "#57"
-  final String? grade;           // e.g. "PSA 10", "BGS 9.5"
-  final String searchQuery;      // cleaned query sent to eBay
+  final String rawText;
+  final String? playerName;
+  final String? year;
+  final String? brand;
+  final String? setName;
+  final String? cardNumber;
+  final String? grade;
+  final String searchQuery;
 
   ScanResultModel({
     required this.rawText,

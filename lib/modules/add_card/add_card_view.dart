@@ -15,7 +15,7 @@ class AddCardView extends GetView<AddCardController> {
       appBar: AppBar(
         backgroundColor: AppColors.bgDark,
         title: Text('Add Card', style: GoogleFonts.inter(fontSize: 18.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-        leading: IconButton(icon: Icon(Icons.close, color: AppColors.textPrimary), onPressed: Get.back),
+        leading: IconButton(icon: const Icon(Icons.close, color: AppColors.textPrimary), onPressed: Get.back),
       ),
       body: SafeArea(
         child: Column(

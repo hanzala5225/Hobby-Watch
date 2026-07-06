@@ -47,7 +47,7 @@ class SignupView extends GetView<SignupController> {
 
                       SizedBox(height: 36.h),
 
-                      _FieldLabel('Full Name'),
+                      const _FieldLabel('Full Name'),
                       SizedBox(height: 8.h),
                       TextFormField(
                         controller: controller.nameController,
@@ -62,7 +62,7 @@ class SignupView extends GetView<SignupController> {
 
                       SizedBox(height: 18.h),
 
-                      _FieldLabel('Email Address'),
+                      const _FieldLabel('Email Address'),
                       SizedBox(height: 8.h),
                       TextFormField(
                         controller: controller.emailController,
@@ -77,7 +77,7 @@ class SignupView extends GetView<SignupController> {
 
                       SizedBox(height: 18.h),
 
-                      _FieldLabel('Password'),
+                      const _FieldLabel('Password'),
                       SizedBox(height: 8.h),
                       Obx(() => TextFormField(
                         controller: controller.passwordController,
@@ -99,7 +99,7 @@ class SignupView extends GetView<SignupController> {
 
                       SizedBox(height: 18.h),
 
-                      _FieldLabel('Confirm Password'),
+                      const _FieldLabel('Confirm Password'),
                       SizedBox(height: 8.h),
                       TextFormField(
                         controller: controller.confirmController,

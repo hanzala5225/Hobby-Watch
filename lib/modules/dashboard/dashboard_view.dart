@@ -27,7 +27,7 @@ class DashboardView extends GetView<DashboardController> {
         body: SafeArea(
           child: Obx(() {
             if (controller.isLoading.value) {
-              return Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2.5));
+              return const Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2.5));
             }
             return RefreshIndicator(
               color: AppColors.accent,
@@ -84,7 +84,7 @@ class DashboardView extends GetView<DashboardController> {
             Text('Hobby Watch', style: GoogleFonts.inter(fontSize: 18.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
             const Spacer(),
             Obx(() => controller.isRefreshing.value
-                ? SizedBox(width: 18.w, height: 18.w, child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2))
+                ? SizedBox(width: 18.w, height: 18.w, child: const CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2))
                 : IconButton(icon: Icon(Icons.refresh_rounded, color: AppColors.textSecondary, size: 22.sp), onPressed: controller.refreshPrices)),
             IconButton(
               icon: Icon(Icons.notifications_outlined, color: AppColors.textSecondary, size: 22.sp),
@@ -297,7 +297,7 @@ class DashboardView extends GetView<DashboardController> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _NavItem(icon: Icons.dashboard_rounded, label: 'Dashboard', isActive: true),
+              const _NavItem(icon: Icons.dashboard_rounded, label: 'Dashboard', isActive: true),
               _NavItem(icon: Icons.grid_view_rounded, label: 'Collection', isActive: false, onTap: () => Get.toNamed(AppRoutes.collection)),
               _NavItem(icon: Icons.notifications_rounded, label: 'Alerts', isActive: false, onTap: () => Get.toNamed(AppRoutes.notifications)),
               _NavItem(icon: Icons.settings_rounded, label: 'Settings', isActive: false, onTap: () => Get.toNamed(AppRoutes.settings)),
@@ -328,7 +328,6 @@ class DashboardView extends GetView<DashboardController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Avatar + close button in same row
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -422,7 +421,6 @@ class DashboardView extends GetView<DashboardController> {
                   _drawerTile(Icons.privacy_tip_outlined,  'Privacy Policy',  'How we use your data',       AppColors.textSecondary, () { Get.back(); Get.toNamed(AppRoutes.privacy); }),
 
                   SizedBox(height: 18.h),
-                  // Sign out — full width danger button
                   Builder(
                     builder: (ctx) => GestureDetector(
                       onTap: () => _showSignOutDialog(ctx),

@@ -5,8 +5,6 @@ import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 import 'api_service.dart';
 
-/// Handles Firebase Cloud Messaging push notifications.
-/// SETUP: Call Get.put(NotificationService()) in main.dart AFTER Firebase.initializeApp()
 class NotificationService extends GetxService {
   final _log = Logger();
   final _localNotifications = FlutterLocalNotificationsPlugin();
@@ -21,9 +19,7 @@ class NotificationService extends GetxService {
   // ─── Local Notifications Setup ────────────────────────────────────────────
 
   Future<void> _initLocalNotifications() async {
-    // Use @drawable/ic_notification (white flat icon) NOT @mipmap/ic_launcher.
-    // ic_launcher is a full-color adaptive icon — Android ignores color in
-    // notification icons and renders them as a grey blob instead.
+
     const androidSettings = AndroidInitializationSettings('@drawable/ic_notification');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -97,9 +93,6 @@ class NotificationService extends GetxService {
       channelDescription: 'Price target alerts for your card collection',
       importance: Importance.high,
       priority: Priority.high,
-      // Explicitly set icon here too — covers the foreground local notification.
-      // Do NOT use @drawable/ prefix here — flutter_local_notifications
-      // looks up the drawable name directly without the prefix.
       icon: 'ic_notification',
       color: Color(0xFF009286),
     );
@@ -118,12 +111,7 @@ class NotificationService extends GetxService {
 
   // ─── Save to Backend ──────────────────────────────────────────────────────
 
-  /// Saves any received FCM message to the backend notifications table
-  /// so it appears in the in-app notification screen.
-  /// Uses messageId for deduplication — safe to call from multiple listeners.
   Future<void> _saveToBackend(RemoteMessage message) async {
-    // Skip if there is no title/body — data-only messages (silent pushes)
-    // have no notification payload and shouldn't appear in the screen.
     final title = message.notification?.title;
     final body  = message.notification?.body;
     if (title == null || title.isEmpty) return;

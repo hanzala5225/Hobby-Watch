@@ -236,12 +236,6 @@ class ApiService extends GetxService {
     await _dio.post('/notifications/mark-all-read');
   }
 
-  /// Saves a received FCM message to the backend notifications table
-  /// so it appears in the in-app notification screen.
-  ///
-  /// [fcmMessageId] is used for deduplication on the backend — safe to call
-  /// from onMessage, onMessageOpenedApp, and getInitialMessage without
-  /// worrying about inserting duplicates.
   Future<void> saveReceivedNotification({
     required String title,
     required String body,
@@ -254,14 +248,10 @@ class ApiService extends GetxService {
         'title': title,
         'body': body,
         'type': type,
-        // Cast all values to String — FCM data payload values are always strings,
-        // but the map type may be dynamic; backend expects Map<string, string>.
         'payload': payload.map((k, v) => MapEntry(k, v.toString())),
         if (fcmMessageId != null) 'fcmMessageId': fcmMessageId,
       });
     } catch (e) {
-      // Non-fatal — notification already delivered to device, just won't
-      // appear in in-app screen if this fails.
       _log.w('saveReceivedNotification failed: $e');
     }
   }

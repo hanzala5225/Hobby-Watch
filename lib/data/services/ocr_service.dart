@@ -19,8 +19,6 @@ class OcrService extends GetxService {
     super.onClose();
   }
 
-  /// Scans an image file and extracts card information using Google ML Kit.
-  /// Returns a structured [ScanResult] with extracted fields + a search query.
   Future<ScanResult> scanCard(File imageFile) async {
     try {
       final inputImage = InputImage.fromFile(imageFile);

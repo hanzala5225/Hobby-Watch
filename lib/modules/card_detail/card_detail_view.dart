@@ -22,7 +22,6 @@ class CardDetailView extends GetView<CardDetailController> {
 
         return CustomScrollView(
           slivers: [
-            // ── Combined header (no separate AppBar — no seam) ─────────────
             SliverToBoxAdapter(
               child: Container(
                 width: double.infinity,

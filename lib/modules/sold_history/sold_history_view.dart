@@ -28,7 +28,7 @@ class SoldHistoryView extends GetView<SoldHistoryController> {
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2.5));
+          return const Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2.5));
         }
 
         return RefreshIndicator(

@@ -38,7 +38,7 @@ class CollectionView extends GetView<CollectionController> {
                     top: 8.h, right: 6.w,
                     child: Container(
                       width: 16.w, height: 16.w,
-                      decoration: BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
+                      decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
                       child: Center(
                         child: Text('$soldCount',
                             style: GoogleFonts.inter(fontSize: 9.sp, fontWeight: FontWeight.w700, color: Colors.white)),
@@ -73,7 +73,7 @@ class CollectionView extends GetView<CollectionController> {
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value) {
-                return Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2.5));
+                return const Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2.5));
               }
               final cards = controller.filteredCards;
               if (cards.isEmpty) {

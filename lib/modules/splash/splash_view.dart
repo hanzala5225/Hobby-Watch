@@ -230,10 +230,8 @@ class _AnimatedDots extends StatelessWidget {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: List.generate(3, (i) {
-            // Each dot is offset by 1/3 of the cycle
             final offset = i / 3.0;
             final t = ((shimmer.value - offset) % 1.0 + 1.0) % 1.0;
-            // Scale: up at t=0.5, down at t=0 and t=1
             final scale = 1.0 + 0.6 * (1.0 - (t * 2 - 1).abs());
             final opacity = 0.3 + 0.7 * (1.0 - (t * 2 - 1).abs());
             return Container(

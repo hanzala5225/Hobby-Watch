@@ -60,7 +60,7 @@ class LoginView extends StatelessWidget {
 
                 SizedBox(height: 40.h),
 
-                _FieldLabel('Email Address'),
+                const _FieldLabel('Email Address'),
                 SizedBox(height: 8.h),
                 TextFormField(
                   controller: c.emailController,
@@ -75,7 +75,7 @@ class LoginView extends StatelessWidget {
 
                 SizedBox(height: 20.h),
 
-                _FieldLabel('Password'),
+                const _FieldLabel('Password'),
                 SizedBox(height: 8.h),
                 Obx(() => TextFormField(
                   controller: c.passwordController,
