@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get/get.dart';
@@ -54,8 +55,25 @@ class LoginController extends GetxController {
   }
 
   String _parseError(dynamic e) {
-    try { return e.response?.data['message'] ?? 'Invalid email or password.'; }
-    catch (_) { return 'Could not connect to server. Please check your connection.'; }
+    if (e is DioException) {
+      // No response at all = never reached the server (offline, DNS, or a
+      // timeout while a sleeping backend — e.g. Render free tier — wakes up).
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        return 'Could not reach the server. It may be waking up — please try again in a moment.';
+      }
+      final status = e.response?.statusCode;
+      final serverMessage = e.response?.data is Map ? e.response?.data['message'] : null;
+      if (serverMessage is String && serverMessage.isNotEmpty) return serverMessage;
+      if (status == 401) return 'Invalid email or password.';
+      if (status != null && status >= 500) {
+        return 'The server had a problem. Please try again in a moment.';
+      }
+      return 'Could not connect to server. Please check your connection.';
+    }
+    return 'Something went wrong. Please try again.';
   }
 
   @override

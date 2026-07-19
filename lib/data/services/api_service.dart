@@ -7,6 +7,8 @@ import '../models/auth_model.dart';
 import '../models/card_model.dart';
 import '../models/ebay_result_model.dart';
 
+enum _RefreshResult { success, authInvalid, networkError }
+
 class ApiService extends GetxService {
   late final Dio _dio;
   final _log = Logger();
@@ -43,8 +45,8 @@ class ApiService extends GetxService {
           }
 
           // Try silent token refresh
-          final refreshed = await _tryRefreshToken();
-          if (refreshed) {
+          final refreshResult = await _tryRefreshToken();
+          if (refreshResult == _RefreshResult.success) {
             final prefs = await SharedPreferences.getInstance();
             final newToken = prefs.getString(AppConstants.keyAccessToken);
             e.requestOptions.headers['Authorization'] = 'Bearer $newToken';
@@ -53,10 +55,19 @@ class ApiService extends GetxService {
               return handler.resolve(retried);
             } catch (_) {}
           }
-          // Refresh failed — force logout
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.clear();
-          Get.offAllNamed('/login');
+
+          // Only force logout when the refresh token itself was genuinely
+          // rejected (expired/invalid). A network failure, timeout, or the
+          // backend still waking up from sleep (e.g. Render free tier) is
+          // NOT proof the session is invalid — don't wipe the saved login
+          // over a transient connectivity problem.
+          if (refreshResult == _RefreshResult.authInvalid) {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.remove(AppConstants.keyAccessToken);
+            await prefs.remove(AppConstants.keyRefreshToken);
+            await prefs.remove(AppConstants.keyUser);
+            Get.offAllNamed('/login');
+          }
         }
         return handler.next(e);
       },
@@ -65,13 +76,16 @@ class ApiService extends GetxService {
 
   // ─── Token Refresh ────────────────────────────────────────────────────────
 
-  Future<bool> _tryRefreshToken() async {
+  Future<_RefreshResult> _tryRefreshToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final refreshToken = prefs.getString(AppConstants.keyRefreshToken);
-      if (refreshToken == null) return false;
+      if (refreshToken == null) return _RefreshResult.authInvalid;
 
-      final res = await Dio().post(
+      final res = await Dio(BaseOptions(
+        connectTimeout: const Duration(milliseconds: AppConstants.connectTimeout),
+        receiveTimeout: const Duration(milliseconds: AppConstants.receiveTimeout),
+      )).post(
         '${AppConstants.baseUrl}/auth/refresh',
         data: {'refreshToken': refreshToken},
         options: Options(headers: {'Content-Type': 'application/json'}),
@@ -81,12 +95,24 @@ class ApiService extends GetxService {
         final auth = AuthResponse.fromJson(res.data);
         await prefs.setString(AppConstants.keyAccessToken, auth.accessToken);
         await prefs.setString(AppConstants.keyRefreshToken, auth.refreshToken);
-        return true;
+        return _RefreshResult.success;
       }
+      return _RefreshResult.networkError;
+    } on DioException catch (e) {
+      // The refresh endpoint itself explicitly rejected the refresh token —
+      // that's a real "you're logged out" signal.
+      if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
+        return _RefreshResult.authInvalid;
+      }
+      // Timeouts, no connection, 5xx from a waking server, etc. — not proof
+      // the session is invalid, just a transient failure. Stay logged in
+      // locally and let the next attempt (or app reopen) try again.
+      _log.e('Token refresh failed (network): ${e.message}');
+      return _RefreshResult.networkError;
     } catch (e) {
       _log.e('Token refresh failed: $e');
+      return _RefreshResult.networkError;
     }
-    return false;
   }
 
   // ─── Auth ─────────────────────────────────────────────────────────────────

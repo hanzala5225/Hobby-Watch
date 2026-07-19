@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme/app_theme.dart';
 import '../../data/models/card_model.dart';
 import '../routes/app_routes.dart';
@@ -371,7 +372,7 @@ class DashboardView extends GetView<DashboardController> {
                           maxLines: 1, overflow: TextOverflow.ellipsis),
                       /*SizedBox(height: 10.h),*/
                       // Portfolio mini-stats strip
-                     /* Container(
+                      /* Container(
                         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.12),
@@ -401,6 +402,42 @@ class DashboardView extends GetView<DashboardController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ── Beta feedback — kept first/obvious per client request ──
+                  GestureDetector(
+                    onTap: () { Get.back(); _launchBugReportForm(); },
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF6B57).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(color: const Color(0xFFFF6B57).withOpacity(0.4)),
+                      ),
+                      child: Row(children: [
+                        Container(
+                          width: 36.w, height: 36.w,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF6B57).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(9.r),
+                          ),
+                          child: Icon(Icons.bug_report_rounded, color: const Color(0xFFFF6B57), size: 18.sp),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Report a Bug / Share Feedback',
+                                style: GoogleFonts.inter(fontSize: 13.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                            Text('Help us improve during beta',
+                                style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textMuted)),
+                          ],
+                        )),
+                        Icon(Icons.open_in_new_rounded, color: const Color(0xFFFF6B57), size: 16.sp),
+                      ]),
+                    ),
+                  ),
+                  SizedBox(height: 18.h),
+
                   _drawerGroupLabel('MAIN'),
                   SizedBox(height: 6.h),
                   _drawerTile(Icons.dashboard_rounded,     'Dashboard',       'Your portfolio overview',    AppColors.primary,  () { Get.back(); }),
@@ -549,6 +586,19 @@ class DashboardView extends GetView<DashboardController> {
       SizedBox(height: 2.h),
       Text(label, style: GoogleFonts.inter(fontSize: 10.sp, color: Colors.white60)),
     ]));
+  }
+
+  Future<void> _launchBugReportForm() async {
+    final uri = Uri.parse(
+      'https://docs.google.com/forms/d/e/1FAIpQLSfI-39jzI3eyba04NK9DgsqQtRoQdaNyKadhSFzmz_TklAAFg/viewform',
+    );
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) throw Exception('launch returned false');
+    } catch (_) {
+      Get.snackbar('Could not open form', 'Please check your internet connection and try again.',
+          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16), borderRadius: 12);
+    }
   }
 
   Widget _drawerDivider() {

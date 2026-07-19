@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get/get.dart';
@@ -60,8 +61,22 @@ class SignupController extends GetxController {
   }
 
   String _parseError(dynamic e) {
-    try { return e.response?.data['message'] ?? 'Registration failed.'; }
-    catch (_) { return 'Could not connect to server.'; }
+    if (e is DioException) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        return 'Could not reach the server. It may be waking up — please try again in a moment.';
+      }
+      final status = e.response?.statusCode;
+      final serverMessage = e.response?.data is Map ? e.response?.data['message'] : null;
+      if (serverMessage is String && serverMessage.isNotEmpty) return serverMessage;
+      if (status != null && status >= 500) {
+        return 'The server had a problem. Please try again in a moment.';
+      }
+      return 'Registration failed.';
+    }
+    return 'Something went wrong. Please try again.';
   }
 
   @override
