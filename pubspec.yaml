@@ -61,5 +61,5 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/logo/HobbyWatch_logo.png"
+  image_path: "assets/logo/App-Icon-HW.png"   # was HobbyWatch_logo.png
   remove_alpha_ios: true

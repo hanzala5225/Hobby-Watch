@@ -310,6 +310,15 @@ class _ResultsStep extends StatelessWidget {
                   decoration: InputDecoration(
                     hintText: 'e.g. 2018 Panini Lamar Jackson PSA 10',
                     prefixIcon: Icon(Icons.search, color: AppColors.textMuted, size: 18.sp),
+                    suffixIcon: GestureDetector(
+                      onTap: () {
+                        c.searchQueryController.clear();
+                        c.ebayResults.clear();
+                        c.searchResponse.value = null;
+                        c.errorMessage.value = '';
+                      },
+                      child: Icon(Icons.close_rounded, color: AppColors.textMuted, size: 18.sp),
+                    ),
                     contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                   ),
                 ),
