@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import '../../data/services/api_service.dart';
+import '../dashboard/dashboard_controller.dart';
 
 class NotificationsController extends GetxController {
   final _api = Get.find<ApiService>();
@@ -39,6 +40,12 @@ class NotificationsController extends GetxController {
         notifications[idx] = updated;
       }
     } catch (_) {}
+
+    // Keep the dashboard's bell/Alerts badge in sync immediately, instead of
+    // only correcting itself the next time the dashboard reloads.
+    try {
+      Get.find<DashboardController>().refreshUnreadCount();
+    } catch (_) {}
   }
 
   Future<void> markAllRead() async {
@@ -48,6 +55,10 @@ class NotificationsController extends GetxController {
       notifications.assignAll(
         notifications.map((n) => {...n, 'isRead': true}).toList(),
       );
+    } catch (_) {}
+
+    try {
+      Get.find<DashboardController>().refreshUnreadCount();
     } catch (_) {}
   }
 }

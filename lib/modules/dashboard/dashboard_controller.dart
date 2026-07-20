@@ -16,6 +16,7 @@ class DashboardController extends GetxController {
   final isLoading    = true.obs;
   final isRefreshing = false.obs;
   final user         = Rx<UserModel?>(null);
+  final unreadCount  = 0.obs;
 
   List<CardModel> get targetReachedCards => cards.where((c) => c.isTargetReached && !c.isSold).toList();
   List<CardModel> get recentCards        => cards.where((c) => !c.isSold).take(5).toList();
@@ -75,6 +76,7 @@ class DashboardController extends GetxController {
     super.onInit();
     _loadUser();
     loadCards();
+    refreshUnreadCount();
   }
 
   Future<void> _loadUser() async {
@@ -103,10 +105,19 @@ class DashboardController extends GetxController {
     }
   }
 
+  // Public so other controllers (add-card, notifications screen) can trigger
+  // a refresh after doing something that changes the unread count — e.g.
+  // Get.find<DashboardController>().refreshUnreadCount() after marking a
+  // notification read, or after adding a card that fires an alert.
+  Future<void> refreshUnreadCount() async {
+    unreadCount.value = await _api.getUnreadNotificationCount();
+  }
+
   Future<void> refreshPrices() async {
     if (isRefreshing.value) return;
     isRefreshing.value = true;
     await loadCards();
+    await refreshUnreadCount();
     isRefreshing.value = false;
     Get.snackbar('✅ Prices Updated', 'Latest eBay prices loaded.',
         snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16), borderRadius: 12);

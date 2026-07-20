@@ -87,10 +87,29 @@ class DashboardView extends GetView<DashboardController> {
             Obx(() => controller.isRefreshing.value
                 ? SizedBox(width: 18.w, height: 18.w, child: const CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2))
                 : IconButton(icon: Icon(Icons.refresh_rounded, color: AppColors.textSecondary, size: 22.sp), onPressed: controller.refreshPrices)),
-            IconButton(
-              icon: Icon(Icons.notifications_outlined, color: AppColors.textSecondary, size: 22.sp),
-              onPressed: () => Get.toNamed(AppRoutes.notifications),
-            ),
+            Obx(() => Stack(clipBehavior: Clip.none, children: [
+              IconButton(
+                icon: Icon(Icons.notifications_outlined, color: AppColors.textSecondary, size: 22.sp),
+                onPressed: () => Get.toNamed(AppRoutes.notifications),
+              ),
+              if (controller.unreadCount.value > 0)
+                Positioned(
+                  right: 4,
+                  top: 4,
+                  child: IgnorePointer(
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
+                      constraints: BoxConstraints(minWidth: 16.w, minHeight: 16.w),
+                      decoration: const BoxDecoration(color: AppColors.loss, shape: BoxShape.circle),
+                      alignment: Alignment.center,
+                      child: Text(
+                        controller.unreadCount.value > 9 ? '9+' : '${controller.unreadCount.value}',
+                        style: GoogleFonts.inter(fontSize: 9.sp, fontWeight: FontWeight.w700, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+            ])),
           ],
         ),
       ),
@@ -300,7 +319,13 @@ class DashboardView extends GetView<DashboardController> {
             children: [
               const _NavItem(icon: Icons.dashboard_rounded, label: 'Dashboard', isActive: true),
               _NavItem(icon: Icons.grid_view_rounded, label: 'Collection', isActive: false, onTap: () => Get.toNamed(AppRoutes.collection)),
-              _NavItem(icon: Icons.notifications_rounded, label: 'Alerts', isActive: false, onTap: () => Get.toNamed(AppRoutes.notifications)),
+              Obx(() => _NavItem(
+                icon: Icons.notifications_rounded,
+                label: 'Alerts',
+                isActive: false,
+                badgeCount: controller.unreadCount.value,
+                onTap: () => Get.toNamed(AppRoutes.notifications),
+              )),
               _NavItem(icon: Icons.settings_rounded, label: 'Settings', isActive: false, onTap: () => Get.toNamed(AppRoutes.settings)),
             ],
           ),
@@ -728,7 +753,8 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool isActive;
   final VoidCallback? onTap;
-  const _NavItem({required this.icon, required this.label, required this.isActive, this.onTap});
+  final int badgeCount;
+  const _NavItem({required this.icon, required this.label, required this.isActive, this.onTap, this.badgeCount = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -737,7 +763,24 @@ class _NavItem extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: isActive ? AppColors.primary : AppColors.textMuted, size: 22.sp),
+          Stack(clipBehavior: Clip.none, children: [
+            Icon(icon, color: isActive ? AppColors.primary : AppColors.textMuted, size: 22.sp),
+            if (badgeCount > 0)
+              Positioned(
+                right: -6,
+                top: -4,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
+                  constraints: BoxConstraints(minWidth: 16.w, minHeight: 16.w),
+                  decoration: const BoxDecoration(color: AppColors.loss, shape: BoxShape.circle),
+                  alignment: Alignment.center,
+                  child: Text(
+                    badgeCount > 9 ? '9+' : '$badgeCount',
+                    style: GoogleFonts.inter(fontSize: 9.sp, fontWeight: FontWeight.w700, color: Colors.white),
+                  ),
+                ),
+              ),
+          ]),
           SizedBox(height: 4.h),
           Text(label, style: GoogleFonts.inter(fontSize: 10.sp, color: isActive ? AppColors.primary : AppColors.textMuted, fontWeight: isActive ? FontWeight.w600 : FontWeight.w400)),
         ],

@@ -25,6 +25,14 @@ class AddCardController extends GetxController {
   String? _ebayAvgPrice;
   bool _fromScan = false;
 
+  // Tracks whether the user has manually typed their own eBay search query.
+  // Once true, we stop overwriting it as they keep editing the fields above —
+  // their custom query wins.
+  bool _userEditedSearchQuery = false;
+  // Guards against our own programmatic updates to ebaySearchController
+  // being mistaken for a user edit.
+  bool _autoFilling = false;
+
   @override
   void onInit() {
     super.onInit();
@@ -36,7 +44,60 @@ class AddCardController extends GetxController {
       setNameController.text    = args['setName'] ?? '';
       ebaySearchController.text = args['searchQuery'] ?? '';
       _ebayAvgPrice             = args['ebayAvgPrice']?.toString();
+
+      // If a scan already supplied a search query, treat it as user-provided —
+      // don't let the auto-fill below silently replace it.
+      if (ebaySearchController.text.trim().isNotEmpty) {
+        _userEditedSearchQuery = true;
+      }
     }
+
+    // Live auto-fill: whenever any of the card-identity fields change,
+    // rebuild the eBay Search Query field (unless the user has typed their
+    // own value into it).
+    playerNameController.addListener(_composeAndFillQuery);
+    yearController.addListener(_composeAndFillQuery);
+    brandController.addListener(_composeAndFillQuery);
+    setNameController.addListener(_composeAndFillQuery);
+    cardNumberController.addListener(_composeAndFillQuery);
+    gradeController.addListener(_composeAndFillQuery);
+    ebaySearchController.addListener(_onSearchQueryEdited);
+
+    // In case fields were pre-filled from a scan (playerName/year/setName
+    // above), populate the query once right away.
+    _composeAndFillQuery();
+  }
+
+  void _onSearchQueryEdited() {
+    if (_autoFilling) return; // this change came from us, not the user
+    _userEditedSearchQuery = true;
+  }
+
+  // Builds "{Player Name} {Year} {Brand} {Set} #{Card Number} {Grade}",
+  // skipping any part that's empty, and fills it into the search field —
+  // unless the user has already typed their own custom query.
+  void _composeAndFillQuery() {
+    if (_userEditedSearchQuery) return;
+
+    final cardNumberRaw = cardNumberController.text.trim();
+    final cardNumberPart = cardNumberRaw.isEmpty
+        ? ''
+        : (cardNumberRaw.startsWith('#') ? cardNumberRaw : '#$cardNumberRaw');
+
+    final parts = <String>[
+      playerNameController.text.trim(),
+      yearController.text.trim(),
+      brandController.text.trim(),
+      setNameController.text.trim(),
+      cardNumberPart,
+      gradeController.text.trim(),
+    ].where((p) => p.isNotEmpty).toList();
+
+    final composed = parts.join(' ');
+
+    _autoFilling = true;
+    ebaySearchController.text = composed;
+    _autoFilling = false;
   }
 
   void nextStep() {
@@ -67,9 +128,12 @@ class AddCardController extends GetxController {
 
     isLoading.value = true;
     try {
+      // Field is now auto-filled live as the user types (see
+      // _composeAndFillQuery), so this is just a final safety net in case
+      // it's still empty for some reason (e.g. every field was cleared).
       final searchQuery = ebaySearchController.text.trim().isNotEmpty
           ? ebaySearchController.text.trim()
-          : '${yearController.text} ${brandController.text} ${setNameController.text} ${playerNameController.text} ${gradeController.text}'.trim();
+          : '${playerNameController.text.trim()} ${yearController.text.trim()} ${brandController.text.trim()} ${setNameController.text.trim()} ${cardNumberController.text.trim()} ${gradeController.text.trim()}'.trim();
 
       await _api.addCard({
         'playerName':          playerNameController.text.trim(),
@@ -86,11 +150,11 @@ class AddCardController extends GetxController {
       });
 
       Get.snackbar('✅ Card Added', 'eBay prices will update shortly.',
-        snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16), borderRadius: 12);
+          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16), borderRadius: 12);
       Get.offAllNamed(AppRoutes.dashboard);
     } catch (e) {
       Get.snackbar('Error', 'Failed to add card. Please try again.',
-        snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16), borderRadius: 12);
+          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16), borderRadius: 12);
     } finally {
       isLoading.value = false;
     }
@@ -98,6 +162,14 @@ class AddCardController extends GetxController {
 
   @override
   void onClose() {
+    playerNameController.removeListener(_composeAndFillQuery);
+    yearController.removeListener(_composeAndFillQuery);
+    brandController.removeListener(_composeAndFillQuery);
+    setNameController.removeListener(_composeAndFillQuery);
+    cardNumberController.removeListener(_composeAndFillQuery);
+    gradeController.removeListener(_composeAndFillQuery);
+    ebaySearchController.removeListener(_onSearchQueryEdited);
+
     playerNameController.dispose();
     yearController.dispose();
     setNameController.dispose();

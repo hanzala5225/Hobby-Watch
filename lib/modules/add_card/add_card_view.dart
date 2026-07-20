@@ -158,8 +158,8 @@ class AddCardView extends GetView<AddCardController> {
           decoration: InputDecoration(hintText: 'e.g. 1996 Topps Michael Jordan PSA 10',
             prefixIcon: Icon(Icons.search, color: AppColors.textMuted, size: 20.sp))),
         SizedBox(height: 6.h),
-        Text('If left empty, we build the query from the fields above.',
-          style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted)),
+        Text('Auto-filled from the details above — feel free to edit it.',
+            style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted)),
         SizedBox(height: 32.h),
       ],
     );

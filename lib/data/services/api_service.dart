@@ -257,6 +257,18 @@ class ApiService extends GetxService {
   Future<void> markNotificationRead(String id) async {       // ← ADD THIS
     await _dio.patch('/notifications/$id/read');
   }
+  Future<int> getUnreadNotificationCount() async {
+    try {
+      final res = await _dio.get(
+        '/notifications',
+        queryParameters: {'page': 1, 'pageSize': 1},
+      );
+      final data = res.data['data'];
+      return (data['unreadCount'] as num?)?.toInt() ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
 
   Future<void> markAllNotificationsRead() async {
     await _dio.post('/notifications/mark-all-read');
