@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme/app_theme.dart';
 import '../../data/models/ebay_result_model.dart';
 import 'scan_card_controller.dart';
@@ -18,6 +17,7 @@ class ScanCardView extends GetView<ScanCardController> {
       switch (controller.currentStep.value) {
         case ScanStep.choose:     return _ChooseStep(c: controller);
         case ScanStep.processing: return _ProcessingStep(c: controller);
+        case ScanStep.verify:     return _VerifyStep(c: controller);
         case ScanStep.results:    return _ResultsStep(c: controller);
         case ScanStep.confirm:    return _ConfirmStep(c: controller);
         case ScanStep.manual:     return _ManualStep(c: controller);
@@ -1043,22 +1043,190 @@ class _ManualStep extends StatelessWidget {
                 style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
             SizedBox(height: 12.h),
 
-            // Search eBay button
+            // Search eBay button — routes through Verify first, so the user
+            // can also add Parallel/Card #/Grade (this screen doesn't capture
+            // them) before the search actually fires.
             GestureDetector(
-              onTap: () {
-                final q = [
-                  c.yearController.text.trim(),
-                  c.setNameController.text.trim(),
-                  c.playerNameController.text.trim(),
-                ].where((s) => s.isNotEmpty).join(' ');
-                if (q.isEmpty) {
-                  Get.snackbar('Fill in details', 'Add at least a player name to search.',
-                      snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16), borderRadius: 12);
-                  return;
-                }
-                c.searchQueryController.text = q;
-                c.retrySearch();
-              },
+              onTap: c.goToVerify,
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 15.h),
+                decoration: BoxDecoration(
+                  gradient: AppColors.heroGradient,
+                  borderRadius: BorderRadius.circular(14.r),
+                  boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 14, offset: const Offset(0, 5))],
+                ),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(Icons.fact_check_outlined, color: Colors.white, size: 20.sp),
+                  SizedBox(width: 10.w),
+                  Text('Continue to Verify Details',
+                      style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: Colors.white)),
+                ]),
+              ),
+            ),
+
+            SizedBox(height: 12.h),
+
+            // Skip straight to add
+            GestureDetector(
+              onTap: c.goManualAdd,
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 15.h),
+                decoration: BoxDecoration(
+                  color: AppColors.bgCard,
+                  borderRadius: BorderRadius.circular(14.r),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 20.sp),
+                  SizedBox(width: 10.w),
+                  Text('Skip search — set price manually',
+                      style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                ]),
+              ),
+            ),
+
+            SizedBox(height: 40.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionLabel(String text) => Text(text,
+      style: GoogleFonts.inter(fontSize: 11.sp, fontWeight: FontWeight.w700,
+          color: AppColors.textMuted, letterSpacing: 0.8));
+
+  Widget _field(String label, TextEditingController ctrl, IconData icon, String hint, TextInputType type) {
+    return Row(children: [
+      Icon(icon, color: AppColors.textMuted, size: 17.sp),
+      SizedBox(width: 10.w),
+      SizedBox(width: 80.w, child: Text(label, style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textMuted))),
+      Expanded(
+        child: TextFormField(
+          controller: ctrl,
+          keyboardType: type,
+          style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.border),
+            border: InputBorder.none, enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none, filled: false,
+            isCollapsed: true, contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      ),
+    ]);
+  }
+}
+
+// ── STEP: Verify Details (shown before every eBay search) ──────────────────
+class _VerifyStep extends StatelessWidget {
+  final ScanCardController c;
+  const _VerifyStep({required this.c});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      appBar: AppBar(
+        backgroundColor: AppColors.bgDark,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: AppColors.primary, size: 20.sp),
+          onPressed: c.goBack,
+        ),
+        title: Text('Verify Details',
+            style: GoogleFonts.inter(fontSize: 18.sp, fontWeight: FontWeight.w700, color: AppColors.primary)),
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(20.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Info / error banner
+            Obx(() {
+              final err = c.errorMessage.value;
+              final hasError = err.isNotEmpty;
+              return Container(
+                padding: EdgeInsets.all(14.w),
+                decoration: BoxDecoration(
+                  color: (hasError ? AppColors.loss : AppColors.accent).withOpacity(0.07),
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: (hasError ? AppColors.loss : AppColors.accent).withOpacity(0.2)),
+                ),
+                child: Row(children: [
+                  Icon(hasError ? Icons.error_outline_rounded : Icons.fact_check_outlined,
+                      color: hasError ? AppColors.loss : AppColors.accent, size: 20.sp),
+                  SizedBox(width: 10.w),
+                  Expanded(child: Text(
+                    hasError ? err : 'Check these details — anything missing or wrong here will affect the eBay search below.',
+                    style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary, height: 1.4),
+                  )),
+                ]),
+              );
+            }),
+
+            SizedBox(height: 24.h),
+
+            _sectionLabel('Card Identity'),
+            SizedBox(height: 10.h),
+
+            Container(
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: AppColors.bgCard,
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(children: [
+                _field('Player Name', c.playerNameController, Icons.person_outline_rounded, 'e.g. Michael Jordan', TextInputType.text),
+                Divider(color: AppColors.divider, height: 20.h),
+                _field('Year', c.yearController, Icons.calendar_today_outlined, 'e.g. 1996', TextInputType.number),
+                Divider(color: AppColors.divider, height: 20.h),
+                _field('Brand / Set', c.setNameController, Icons.layers_outlined, 'e.g. Topps Chrome', TextInputType.text),
+                Divider(color: AppColors.divider, height: 20.h),
+                _field('Parallel / Variety', c.parallelController, Icons.auto_awesome_outlined, 'e.g. Silver, Gold Refractor', TextInputType.text),
+                Divider(color: AppColors.divider, height: 20.h),
+                _field('Card Number', c.cardNumberController, Icons.tag_rounded, 'e.g. #139', TextInputType.text),
+                Divider(color: AppColors.divider, height: 20.h),
+                _field('Grade', c.gradeController, Icons.verified_outlined, 'e.g. PSA 10', TextInputType.text),
+              ]),
+            ),
+
+            SizedBox(height: 24.h),
+
+            _sectionLabel('eBay Search Query'),
+            SizedBox(height: 10.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
+              decoration: BoxDecoration(
+                color: AppColors.bgCard,
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: TextFormField(
+                controller: c.searchQueryController,
+                maxLines: 2,
+                style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                decoration: InputDecoration(
+                  hintText: 'This is exactly what gets sent to eBay',
+                  hintStyle: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.border),
+                  border: InputBorder.none, enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none, filled: false,
+                  contentPadding: EdgeInsets.symmetric(vertical: 12.h),
+                ),
+              ),
+            ),
+            SizedBox(height: 6.h),
+            Text('Auto-filled from the fields above — feel free to edit it directly.',
+                style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted)),
+
+            SizedBox(height: 32.h),
+
+            // Primary: search eBay
+            GestureDetector(
+              onTap: c.retrySearch,
               child: Container(
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(vertical: 15.h),
@@ -1078,7 +1246,7 @@ class _ManualStep extends StatelessWidget {
 
             SizedBox(height: 12.h),
 
-            // Skip straight to add
+            // Secondary: skip search entirely
             GestureDetector(
               onTap: c.goManualAdd,
               child: Container(

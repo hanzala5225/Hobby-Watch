@@ -5,6 +5,7 @@ class CardModel {
   final String playerName;
   final String year;
   final String? setName;
+  final String? parallel;
   final String? brand;
   final String? cardNumber;
   final String? grade;
@@ -36,6 +37,7 @@ class CardModel {
     required this.playerName,
     required this.year,
     this.setName,
+    this.parallel,
     this.brand,
     this.cardNumber,
     this.grade,
@@ -68,6 +70,7 @@ class CardModel {
     playerName:           json['playerName'] ?? '',
     year:                 json['year'] ?? '',
     setName:              json['setName'],
+    parallel:             json['parallel'],
     brand:                json['brand'],
     cardNumber:           json['cardNumber'],
     grade:                json['grade'],

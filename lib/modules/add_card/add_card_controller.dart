@@ -13,6 +13,7 @@ class AddCardController extends GetxController {
   final playerNameController  = TextEditingController();
   final yearController        = TextEditingController();
   final setNameController     = TextEditingController();
+  final parallelController    = TextEditingController();
   final brandController       = TextEditingController();
   final cardNumberController  = TextEditingController();
   final gradeController       = TextEditingController();
@@ -42,6 +43,9 @@ class AddCardController extends GetxController {
       playerNameController.text = args['playerName'] ?? '';
       yearController.text       = args['year'] ?? '';
       setNameController.text    = args['setName'] ?? '';
+      parallelController.text   = args['parallel'] ?? '';
+      cardNumberController.text = args['cardNumber'] ?? '';
+      gradeController.text      = args['grade'] ?? '';
       ebaySearchController.text = args['searchQuery'] ?? '';
       _ebayAvgPrice             = args['ebayAvgPrice']?.toString();
 
@@ -59,6 +63,7 @@ class AddCardController extends GetxController {
     yearController.addListener(_composeAndFillQuery);
     brandController.addListener(_composeAndFillQuery);
     setNameController.addListener(_composeAndFillQuery);
+    parallelController.addListener(_composeAndFillQuery);
     cardNumberController.addListener(_composeAndFillQuery);
     gradeController.addListener(_composeAndFillQuery);
     ebaySearchController.addListener(_onSearchQueryEdited);
@@ -73,7 +78,7 @@ class AddCardController extends GetxController {
     _userEditedSearchQuery = true;
   }
 
-  // Builds "{Player Name} {Year} {Brand} {Set} #{Card Number} {Grade}",
+  // Builds "{Player Name} {Year} {Brand} {Set} {Parallel} #{Card Number} {Grade}",
   // skipping any part that's empty, and fills it into the search field —
   // unless the user has already typed their own custom query.
   void _composeAndFillQuery() {
@@ -89,6 +94,7 @@ class AddCardController extends GetxController {
       yearController.text.trim(),
       brandController.text.trim(),
       setNameController.text.trim(),
+      parallelController.text.trim(),
       cardNumberPart,
       gradeController.text.trim(),
     ].where((p) => p.isNotEmpty).toList();
@@ -133,12 +139,13 @@ class AddCardController extends GetxController {
       // it's still empty for some reason (e.g. every field was cleared).
       final searchQuery = ebaySearchController.text.trim().isNotEmpty
           ? ebaySearchController.text.trim()
-          : '${playerNameController.text.trim()} ${yearController.text.trim()} ${brandController.text.trim()} ${setNameController.text.trim()} ${cardNumberController.text.trim()} ${gradeController.text.trim()}'.trim();
+          : '${playerNameController.text.trim()} ${yearController.text.trim()} ${brandController.text.trim()} ${setNameController.text.trim()} ${parallelController.text.trim()} ${cardNumberController.text.trim()} ${gradeController.text.trim()}'.trim();
 
       await _api.addCard({
         'playerName':          playerNameController.text.trim(),
         'year':                yearController.text.trim(),
         'setName':             setNameController.text.trim().isNotEmpty ? setNameController.text.trim() : null,
+        'parallel':            parallelController.text.trim().isNotEmpty ? parallelController.text.trim() : null,
         'brand':               brandController.text.trim().isNotEmpty ? brandController.text.trim() : null,
         'cardNumber':          cardNumberController.text.trim().isNotEmpty ? cardNumberController.text.trim() : null,
         'grade':               gradeController.text.trim().isNotEmpty ? gradeController.text.trim() : null,
@@ -166,6 +173,7 @@ class AddCardController extends GetxController {
     yearController.removeListener(_composeAndFillQuery);
     brandController.removeListener(_composeAndFillQuery);
     setNameController.removeListener(_composeAndFillQuery);
+    parallelController.removeListener(_composeAndFillQuery);
     cardNumberController.removeListener(_composeAndFillQuery);
     gradeController.removeListener(_composeAndFillQuery);
     ebaySearchController.removeListener(_onSearchQueryEdited);
@@ -173,6 +181,7 @@ class AddCardController extends GetxController {
     playerNameController.dispose();
     yearController.dispose();
     setNameController.dispose();
+    parallelController.dispose();
     brandController.dispose();
     cardNumberController.dispose();
     gradeController.dispose();
