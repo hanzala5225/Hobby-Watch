@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -40,7 +41,9 @@ class DashboardView extends GetView<DashboardController> {
                   SliverToBoxAdapter(child: _buildPortfolioHero()),
                   SliverToBoxAdapter(child: SizedBox(height: 24.h)),
                   if (controller.targetReachedCards.isNotEmpty) ...[
-                    SliverToBoxAdapter(child: _sectionHeader('🎯 Ready to Sell', controller.targetReachedCards.length)),
+                    SliverToBoxAdapter(child: _sectionHeader('🎯 Ready to Sell', controller.summary.value.cardsAtTarget,
+                        showAll: true,
+                        onViewAll: () => Get.toNamed(AppRoutes.collection, arguments: {'filter': 'targetReached'}))),
                     SliverToBoxAdapter(child: SizedBox(height: 12.h)),
                     SliverToBoxAdapter(child: _buildAlertCards()),
                     SliverToBoxAdapter(child: SizedBox(height: 24.h)),
@@ -180,8 +183,21 @@ class DashboardView extends GetView<DashboardController> {
                 SizedBox(width: 8.w),
                 _miniStat('Cards', '${s.totalCards}'),
                 SizedBox(width: 8.w),
-                _miniStat('Alerts', '${s.cardsAtTarget}', highlight: s.cardsAtTarget > 0),
+                _miniStat('Alerts', '${s.cardsAtTarget}', highlight: s.cardsAtTarget > 0,
+                    onTap: () => Get.toNamed(AppRoutes.notifications)),
               ]),
+              if (controller.cardsAddedThisWeek > 0) ...[
+                SizedBox(height: 10.h),
+                Row(children: [
+                  Icon(Icons.fiber_new_rounded, color: Colors.white70, size: 14.sp),
+                  SizedBox(width: 4.w),
+                  Expanded(child: Text(
+                    '${controller.cardsAddedThisWeek} card${controller.cardsAddedThisWeek == 1 ? '' : 's'} added this week · ${fmt.format(controller.investedThisWeek)} invested',
+                    style: GoogleFonts.inter(fontSize: 11.sp, color: Colors.white70),
+                    overflow: TextOverflow.ellipsis,
+                  )),
+                ]),
+              ],
             ],
           ),
         );
@@ -189,27 +205,30 @@ class DashboardView extends GetView<DashboardController> {
     );
   }
 
-  Widget _miniStat(String label, String value, {bool highlight = false}) {
+  Widget _miniStat(String label, String value, {bool highlight = false, VoidCallback? onTap}) {
     return Expanded(
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14.r),
-          color: highlight ? AppColors.accent.withOpacity(0.25) : Colors.white.withOpacity(0.12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(value, style: GoogleFonts.inter(fontSize: 15.sp, fontWeight: FontWeight.w700, color: Colors.white)),
-            SizedBox(height: 3.h),
-            Text(label, style: GoogleFonts.inter(fontSize: 10.sp, color: Colors.white60)),
-          ],
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14.r),
+            color: highlight ? AppColors.accent.withOpacity(0.25) : Colors.white.withOpacity(0.12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(value, style: GoogleFonts.inter(fontSize: 15.sp, fontWeight: FontWeight.w700, color: Colors.white)),
+              SizedBox(height: 3.h),
+              Text(label, style: GoogleFonts.inter(fontSize: 10.sp, color: Colors.white60)),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _sectionHeader(String title, int count, {bool showAll = false}) {
+  Widget _sectionHeader(String title, int count, {bool showAll = false, VoidCallback? onViewAll}) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Row(
@@ -223,7 +242,7 @@ class DashboardView extends GetView<DashboardController> {
           ),
           const Spacer(),
           if (showAll) GestureDetector(
-            onTap: () => Get.toNamed(AppRoutes.collection),
+            onTap: onViewAll ?? () => Get.toNamed(AppRoutes.collection),
             child: Text('View all', style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.accent, fontWeight: FontWeight.w500)),
           ),
         ],
@@ -261,9 +280,22 @@ class DashboardView extends GetView<DashboardController> {
               SizedBox(height: 16.h),
               Text('No cards yet', style: GoogleFonts.inter(fontSize: 16.sp, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
               SizedBox(height: 8.h),
-              Text('Tap + to add your first card\nand start tracking profits.',
+              Text('Add your first card and start tracking profits.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textMuted, height: 1.5)),
+              SizedBox(height: 20.h),
+              GestureDetector(
+                onTap: () => Get.toNamed(AppRoutes.scanCard),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+                  decoration: BoxDecoration(gradient: AppColors.heroGradient, borderRadius: BorderRadius.circular(12.r)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.add_rounded, color: Colors.white, size: 18.sp),
+                    SizedBox(width: 6.w),
+                    Text('Add Your First Card', style: GoogleFonts.inter(fontSize: 13.sp, fontWeight: FontWeight.w600, color: Colors.white)),
+                  ]),
+                ),
+              ),
             ],
           ),
         ),
@@ -507,7 +539,7 @@ class DashboardView extends GetView<DashboardController> {
                   SizedBox(height: 20.h),
 
                   // Version footer
-                  Center(child: Text('Hobby Watch v1.0.0',
+                  Center(child: Text('Hobby Watch v1.0.07',
                       style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted))),
                   SizedBox(height: 4.h),
                   Center(child: Text('Sports card profit tracking',
@@ -703,7 +735,13 @@ class _CardRow extends StatelessWidget {
                 gradient: card.isTargetReached ? AppColors.accentGradient : AppColors.primaryGradient,
                 borderRadius: BorderRadius.circular(10.r),
               ),
-              child: Icon(Icons.style_rounded, color: Colors.white, size: 20.sp),
+              child: card.imageUrl != null
+                  ? ClipRRect(
+                borderRadius: BorderRadius.circular(10.r),
+                child: CachedNetworkImage(imageUrl: card.imageUrl!, fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => Icon(Icons.style_rounded, color: Colors.white, size: 20.sp)),
+              )
+                  : Icon(Icons.style_rounded, color: Colors.white, size: 20.sp),
             ),
             SizedBox(width: 12.w),
             Expanded(

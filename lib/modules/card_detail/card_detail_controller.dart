@@ -66,7 +66,7 @@ class CardDetailController extends GetxController {
     final confirmed = await showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
-      builder: (_) => _MarkSoldDialog(
+      builder: (_) => MarkSoldDialog(
         card: card.value,
         soldPriceController: soldPriceController,
         shippingChargeController: shippingChargeController,
@@ -163,40 +163,53 @@ class MarkSoldDialog extends StatelessWidget {
     final fmt = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
     final isTarget = card.isTargetReached;
 
-    // Shifts the whole dialog up above the keyboard as it opens. Note: no
-    // BackdropFilter blur here anymore — it was corrupting the render when
-    // combined with this keyboard-offset Padding (Flutter compositing bug).
-    // showDialog's barrierColor already dims the background, so nothing is
-    // lost visually.
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: EdgeInsets.symmetric(horizontal: 22.w, vertical: 24.h),
-          // Caps the dialog's height so it can never exceed the visible
-          // screen space (especially important once the keyboard is up).
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.bgCard,
-                borderRadius: BorderRadius.circular(24.r),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.18), blurRadius: 40, offset: const Offset(0, 10)),
-                ],
-              ),
+    // Material's Dialog widget already shifts itself above the keyboard
+    // internally (it pads by MediaQuery.viewInsets.bottom). We used to ALSO
+    // wrap it in our own keyboard-offset Padding on top of that — a double
+    // shift that pushed the dialog above the visible screen, which then
+    // forced Flutter's "scroll the focused field into view" behavior to
+    // snap the scroll position down, hiding the header and buttons. Fixed
+    // by removing that outer Padding and instead sizing maxHeight against
+    // the space actually visible above the keyboard, so the full popup
+    // fits and can be scrolled as one piece.
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final visibleHeight = screenHeight - keyboardHeight;
+    final maxDialogHeight = (visibleHeight - 48.h).clamp(280.h, screenHeight * 0.85);
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.symmetric(horizontal: 22.w, vertical: 24.h),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxDialogHeight),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.bgCard,
+            borderRadius: BorderRadius.circular(24.r),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.18), blurRadius: 40, offset: const Offset(0, 10)),
+            ],
+          ),
+          // Header and body now live inside ONE scroll view. Previously the
+          // header sat outside the scrollable area with no way to shrink,
+          // so when the keyboard squeezed the available height it
+          // overflowed. Now, if content ever doesn't fit, the whole dialog
+          // scrolls instead of overflowing.
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24.r),
+            child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ── Header ──────────────────────────────────────────────────
+                  // ── Header ──────────────────────────────────────────
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 18.h),
                     decoration: BoxDecoration(
                       gradient: isTarget ? AppColors.profitGradient : AppColors.heroGradient,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
                     ),
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(children: [
@@ -238,221 +251,221 @@ class MarkSoldDialog extends StatelessWidget {
                     ),
                   ),
 
-                  // ── Body — now scrollable, so it can never get stuck
-                  //    behind the keyboard with no way to reach it ─────────
-                  Flexible(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 20.h),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Price summary
-                          Row(children: [
-                            Expanded(child: _box('Paid', fmt.format(card.purchasePrice), AppColors.textSecondary)),
-                            SizedBox(width: 8.w),
-                            Expanded(child: _box('Market Est.',
-                                card.currentEbayAvg30 != null ? fmt.format(card.currentEbayAvg30!) : '—',
-                                AppColors.accent)),
-                          ]),
-                          SizedBox(height: 18.h),
+                  // ── Body ──────────────────────────────────────────────
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 20.h),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Price summary
+                        Row(children: [
+                          Expanded(child: _box('Paid', fmt.format(card.purchasePrice), AppColors.textSecondary)),
+                          SizedBox(width: 8.w),
+                          Expanded(child: _box('Market Est.',
+                              card.currentEbayAvg30 != null ? fmt.format(card.currentEbayAvg30!) : '—',
+                              AppColors.accent)),
+                        ]),
+                        SizedBox(height: 18.h),
 
-                          // Sold price input
-                          Text('What did it sell for?',
-                              style: GoogleFonts.inter(fontSize: 13.sp, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-                          SizedBox(height: 8.h),
-                          TextFormField(
-                            controller: soldPriceController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            autofocus: true,
-                            style: GoogleFonts.inter(fontSize: 24.sp, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-                            decoration: InputDecoration(
-                              prefixText: '\$  ',
-                              prefixStyle: GoogleFonts.inter(fontSize: 20.sp, fontWeight: FontWeight.w600, color: AppColors.textMuted),
-                              hintText: '0.00',
-                              hintStyle: GoogleFonts.inter(fontSize: 24.sp, fontWeight: FontWeight.w800, color: AppColors.border),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                            ),
+                        // Sold price input
+                        Text('What did it sell for?',
+                            style: GoogleFonts.inter(fontSize: 13.sp, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                        SizedBox(height: 8.h),
+                        TextFormField(
+                          controller: soldPriceController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          autofocus: true,
+                          style: GoogleFonts.inter(fontSize: 24.sp, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                          decoration: InputDecoration(
+                            prefixText: '\$  ',
+                            prefixStyle: GoogleFonts.inter(fontSize: 20.sp, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+                            hintText: '0.00',
+                            hintStyle: GoogleFonts.inter(fontSize: 24.sp, fontWeight: FontWeight.w800, color: AppColors.border),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
                           ),
+                        ),
 
-                          SizedBox(height: 14.h),
+                        SizedBox(height: 14.h),
 
-                          // "Sold outside of eBay" checkbox
-                          Obx(() => GestureDetector(
-                            onTap: () => soldOutsideEbay.value = !soldOutsideEbay.value,
-                            child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                              decoration: BoxDecoration(
-                                color: soldOutsideEbay.value ? AppColors.accent.withOpacity(0.08) : AppColors.bgSurface,
-                                borderRadius: BorderRadius.circular(10.r),
-                                border: Border.all(color: soldOutsideEbay.value ? AppColors.accent.withOpacity(0.3) : AppColors.border),
-                              ),
-                              child: Row(children: [
-                                Icon(
-                                  soldOutsideEbay.value ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
-                                  color: soldOutsideEbay.value ? AppColors.accent : AppColors.textMuted,
-                                  size: 20.sp,
-                                ),
-                                SizedBox(width: 10.w),
-                                Expanded(child: Text(
-                                  'Sold outside of eBay — No Fees',
-                                  style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                                )),
-                              ]),
+                        // "Sold outside of eBay" checkbox
+                        Obx(() => GestureDetector(
+                          onTap: () => soldOutsideEbay.value = !soldOutsideEbay.value,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                            decoration: BoxDecoration(
+                              color: soldOutsideEbay.value ? AppColors.accent.withOpacity(0.08) : AppColors.bgSurface,
+                              borderRadius: BorderRadius.circular(10.r),
+                              border: Border.all(color: soldOutsideEbay.value ? AppColors.accent.withOpacity(0.3) : AppColors.border),
                             ),
-                          )),
+                            child: Row(children: [
+                              Icon(
+                                soldOutsideEbay.value ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
+                                color: soldOutsideEbay.value ? AppColors.accent : AppColors.textMuted,
+                                size: 20.sp,
+                              ),
+                              SizedBox(width: 10.w),
+                              Expanded(child: Text(
+                                'Sold outside of eBay — No Fees',
+                                style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                              )),
+                            ]),
+                          ),
+                        )),
 
-                          // Shipping section
-                          Obx(() {
-                            if (soldOutsideEbay.value) return const SizedBox();
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(height: 16.h),
-                                Text('Shipping charged to buyer',
-                                    style: GoogleFonts.inter(fontSize: 13.sp, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-                                SizedBox(height: 4.h),
-                                Text('eBay applies its fee to the sold price + shipping combined.',
-                                    style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textMuted)),
-                                SizedBox(height: 8.h),
-                                Obx(() => TextFormField(
-                                  controller: shippingChargeController,
-                                  enabled: !shippingNotNeeded.value,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  style: GoogleFonts.inter(fontSize: 16.sp, fontWeight: FontWeight.w700,
-                                      color: shippingNotNeeded.value ? AppColors.textMuted : AppColors.textPrimary),
-                                  decoration: InputDecoration(
-                                    prefixText: '\$  ',
-                                    prefixStyle: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.textMuted),
-                                    hintText: '0.00',
-                                    filled: shippingNotNeeded.value,
-                                    fillColor: AppColors.bgSurface,
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                        // Shipping section
+                        Obx(() {
+                          if (soldOutsideEbay.value) return const SizedBox();
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(height: 16.h),
+                              Text('Shipping charged to buyer',
+                                  style: GoogleFonts.inter(fontSize: 13.sp, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                              SizedBox(height: 4.h),
+                              Text('eBay applies its fee to the sold price + shipping combined.',
+                                  style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textMuted)),
+                              SizedBox(height: 8.h),
+                              Obx(() => TextFormField(
+                                controller: shippingChargeController,
+                                enabled: !shippingNotNeeded.value,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                style: GoogleFonts.inter(fontSize: 16.sp, fontWeight: FontWeight.w700,
+                                    color: shippingNotNeeded.value ? AppColors.textMuted : AppColors.textPrimary),
+                                decoration: InputDecoration(
+                                  prefixText: '\$  ',
+                                  prefixStyle: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+                                  hintText: '0.00',
+                                  filled: shippingNotNeeded.value,
+                                  fillColor: AppColors.bgSurface,
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                                ),
+                              )),
+                              SizedBox(height: 10.h),
+
+                              Obx(() => GestureDetector(
+                                onTap: () {
+                                  shippingNotNeeded.value = !shippingNotNeeded.value;
+                                  if (shippingNotNeeded.value) shippingChargeController.clear();
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                                  decoration: BoxDecoration(
+                                    color: shippingNotNeeded.value ? AppColors.accent.withOpacity(0.08) : AppColors.bgSurface,
+                                    borderRadius: BorderRadius.circular(10.r),
+                                    border: Border.all(color: shippingNotNeeded.value ? AppColors.accent.withOpacity(0.3) : AppColors.border),
                                   ),
-                                )),
-                                SizedBox(height: 10.h),
-
-                                Obx(() => GestureDetector(
-                                  onTap: () {
-                                    shippingNotNeeded.value = !shippingNotNeeded.value;
-                                    if (shippingNotNeeded.value) shippingChargeController.clear();
-                                  },
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                                    decoration: BoxDecoration(
-                                      color: shippingNotNeeded.value ? AppColors.accent.withOpacity(0.08) : AppColors.bgSurface,
-                                      borderRadius: BorderRadius.circular(10.r),
-                                      border: Border.all(color: shippingNotNeeded.value ? AppColors.accent.withOpacity(0.3) : AppColors.border),
+                                  child: Row(children: [
+                                    Icon(
+                                      shippingNotNeeded.value ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
+                                      color: shippingNotNeeded.value ? AppColors.accent : AppColors.textMuted,
+                                      size: 20.sp,
                                     ),
-                                    child: Row(children: [
-                                      Icon(
-                                        shippingNotNeeded.value ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
-                                        color: shippingNotNeeded.value ? AppColors.accent : AppColors.textMuted,
-                                        size: 20.sp,
-                                      ),
-                                      SizedBox(width: 10.w),
-                                      Expanded(child: Text(
-                                        'Shipping not needed (e.g. local pickup)',
-                                        style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                                      )),
-                                    ]),
-                                  ),
-                                )),
-                              ],
+                                    SizedBox(width: 10.w),
+                                    Expanded(child: Text(
+                                      'Shipping not needed (e.g. local pickup)',
+                                      style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                                    )),
+                                  ]),
+                                ),
+                              )),
+                            ],
+                          );
+                        }),
+
+                        SizedBox(height: 14.h),
+
+                        // Live fee preview
+                        AnimatedBuilder(
+                          animation: Listenable.merge([soldPriceController, shippingChargeController]),
+                          builder: (_, __) => Obx(() {
+                            final soldPrice = double.tryParse(soldPriceController.text.replaceAll(',', '.')) ?? 0;
+                            final shipping = (soldOutsideEbay.value || shippingNotNeeded.value)
+                                ? 0.0
+                                : (double.tryParse(shippingChargeController.text.replaceAll(',', '.')) ?? 0.0);
+                            final combined = soldPrice + shipping;
+                            final feeAmount = soldOutsideEbay.value ? 0.0 : combined * (card.ebayFeePercent / 100);
+                            final afterFees = combined - feeAmount;
+
+                            return Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(12.w),
+                              decoration: BoxDecoration(
+                                color: AppColors.bgSurface,
+                                borderRadius: BorderRadius.circular(10.r),
+                              ),
+                              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                  Text(soldOutsideEbay.value ? 'eBay fee' : 'eBay fee (${card.ebayFeePercent.toStringAsFixed(2)}%)',
+                                      style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted)),
+                                  Text(soldOutsideEbay.value ? 'None' : '-${fmt.format(feeAmount)}',
+                                      style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w700, color: AppColors.loss)),
+                                ]),
+                                SizedBox(height: 4.h),
+                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                  Text('You keep', style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted)),
+                                  Text(fmt.format(afterFees),
+                                      style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                                ]),
+                              ]),
                             );
                           }),
+                        ),
 
-                          SizedBox(height: 14.h),
+                        SizedBox(height: 22.h),
 
-                          // Live fee preview
-                          AnimatedBuilder(
-                            animation: Listenable.merge([soldPriceController, shippingChargeController]),
-                            builder: (_, __) => Obx(() {
-                              final soldPrice = double.tryParse(soldPriceController.text.replaceAll(',', '.')) ?? 0;
-                              final shipping = (soldOutsideEbay.value || shippingNotNeeded.value)
-                                  ? 0.0
-                                  : (double.tryParse(shippingChargeController.text.replaceAll(',', '.')) ?? 0.0);
-                              final combined = soldPrice + shipping;
-                              final feeAmount = soldOutsideEbay.value ? 0.0 : combined * (card.ebayFeePercent / 100);
-                              final afterFees = combined - feeAmount;
-
-                              return Container(
-                                width: double.infinity,
-                                padding: EdgeInsets.all(12.w),
-                                decoration: BoxDecoration(
-                                  color: AppColors.bgSurface,
-                                  borderRadius: BorderRadius.circular(10.r),
-                                ),
-                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                    Text(soldOutsideEbay.value ? 'eBay fee' : 'eBay fee (${card.ebayFeePercent.toStringAsFixed(2)}%)',
-                                        style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted)),
-                                    Text(soldOutsideEbay.value ? 'None' : '-${fmt.format(feeAmount)}',
-                                        style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w700, color: AppColors.loss)),
-                                  ]),
-                                  SizedBox(height: 4.h),
-                                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                    Text('You keep', style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted)),
-                                    Text(fmt.format(afterFees),
-                                        style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                                  ]),
-                                ]),
-                              );
-                            }),
+                        Row(children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.textSecondary,
+                                side: const BorderSide(color: AppColors.border),
+                                minimumSize: Size(0, 50.h),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                              ),
+                              child: Text('Cancel',
+                                  style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w600)),
+                            ),
                           ),
-
-                          SizedBox(height: 22.h),
-
-                          Row(children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.textSecondary,
-                                  side: const BorderSide(color: AppColors.border),
-                                  minimumSize: Size(0, 50.h),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            flex: 2,
+                            child: GestureDetector(
+                              onTap: () => Navigator.pop(context, true),
+                              child: Container(
+                                height: 50.h,
+                                decoration: BoxDecoration(
+                                  gradient: isTarget ? AppColors.profitGradient : AppColors.heroGradient,
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  boxShadow: [BoxShadow(
+                                    color: (isTarget ? AppColors.accent : AppColors.primary).withOpacity(0.3),
+                                    blurRadius: 14, offset: const Offset(0, 4),
+                                  )],
                                 ),
-                                child: Text('Cancel',
-                                    style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w600)),
-                              ),
-                            ),
-                            SizedBox(width: 12.w),
-                            Expanded(
-                              flex: 2,
-                              child: GestureDetector(
-                                onTap: () => Navigator.pop(context, true),
-                                child: Container(
-                                  height: 50.h,
-                                  decoration: BoxDecoration(
-                                    gradient: isTarget ? AppColors.profitGradient : AppColors.heroGradient,
-                                    borderRadius: BorderRadius.circular(12.r),
-                                    boxShadow: [BoxShadow(
-                                      color: (isTarget ? AppColors.accent : AppColors.primary).withOpacity(0.3),
-                                      blurRadius: 14, offset: const Offset(0, 4),
-                                    )],
-                                  ),
-                                  child: Center(
-                                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                      Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 18.sp),
-                                      SizedBox(width: 8.w),
-                                      Text('Confirm Sale',
-                                          style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: Colors.white)),
-                                    ]),
-                                  ),
+                                child: Center(
+                                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                    Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 18.sp),
+                                    SizedBox(width: 8.w),
+                                    Text('Confirm Sale',
+                                        style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: Colors.white)),
+                                  ]),
                                 ),
                               ),
                             ),
-                          ]),
-                        ],
-                      ),
+                          ),
+                        ]),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
           ),
-      ),
-    );
+        ),
+      )
+      );
   }
 
   Widget _box(String label, String value, Color valueColor) {
@@ -466,15 +479,4 @@ class MarkSoldDialog extends StatelessWidget {
       ]),
     );
   }
-}
-
-// Alias for backward compat
-class _MarkSoldDialog extends MarkSoldDialog {
-  const _MarkSoldDialog({
-    required super.card,
-    required super.soldPriceController,
-    required super.shippingChargeController,
-    required super.soldOutsideEbay,
-    required super.shippingNotNeeded,
-  });
 }

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../app/theme/app_theme.dart';
+import '../routes/app_routes.dart';
 import 'card_detail_controller.dart';
 
 class CardDetailView extends GetView<CardDetailController> {
@@ -52,6 +53,13 @@ class CardDetailView extends GetView<CardDetailController> {
                                     child: SizedBox(width: 20.w, height: 20.w, child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
                                     : IconButton(icon: Icon(Icons.refresh_rounded, color: Colors.white, size: 22.sp), onPressed: controller.refreshPrice)),
                               IconButton(
+                                icon: Icon(Icons.edit_outlined, color: Colors.white, size: 22.sp),
+                                onPressed: () async {
+                                  final result = await Get.toNamed(AppRoutes.editCard, arguments: card);
+                                  if (result != null) controller.card.value = result;
+                                },
+                              ),
+                              IconButton(
                                 icon: Icon(Icons.delete_outline_rounded, color: Colors.white70, size: 22.sp),
                                 onPressed: () => _showDeleteDialog(context, card.playerName),
                               ),
@@ -59,6 +67,7 @@ class CardDetailView extends GetView<CardDetailController> {
                           ],
                         ),
                         // Badge + name
+
                         Padding(
                           padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 0),
                           child: Column(
@@ -342,22 +351,5 @@ class _PriceBox extends StatelessWidget {
             color: color ?? (accent ? AppColors.primary : AppColors.textPrimary))),
       ]),
     );
-  }
-}
-
-class _AvgColumn extends StatelessWidget {
-  final String label;
-  final double? value;
-  final NumberFormat fmt;
-  const _AvgColumn({required this.label, required this.value, required this.fmt});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(children: [
-      Text(value != null ? fmt.format(value!) : '—',
-          style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-      SizedBox(height: 3.h),
-      Text(label, style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textMuted)),
-    ]);
   }
 }

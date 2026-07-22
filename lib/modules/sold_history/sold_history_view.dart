@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -241,7 +242,13 @@ class _SoldCardTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10.r),
                     border: Border.all(color: AppColors.border),
                   ),
-                  child: Icon(Icons.style_rounded, color: AppColors.textMuted, size: 22.sp),
+                  child: card.imageUrl != null
+                      ? ClipRRect(
+                    borderRadius: BorderRadius.circular(10.r),
+                    child: CachedNetworkImage(imageUrl: card.imageUrl!, fit: BoxFit.cover,
+                        errorWidget: (_, __, ___) => Icon(Icons.style_rounded, color: AppColors.textMuted, size: 22.sp)),
+                  )
+                      : Icon(Icons.style_rounded, color: AppColors.textMuted, size: 22.sp),
                 ),
                 SizedBox(width: 12.w),
                 Expanded(

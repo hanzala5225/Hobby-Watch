@@ -224,6 +224,7 @@ class ScanCardController extends GetxController {
       'cardName':    selectedResult.value?.title ?? '',
       'ebayAvgPrice':searchResponse.value?.avg30Day ?? selectedResult.value?.price ?? 0.0,
       'searchQuery': searchQueryController.text,
+      'imageUrl':    selectedResult.value?.imageUrl,
     });
   }
 

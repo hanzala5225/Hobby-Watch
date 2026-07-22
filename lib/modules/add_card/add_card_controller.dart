@@ -24,6 +24,7 @@ class AddCardController extends GetxController {
   final targetMarginController   = TextEditingController(text: '30');
 
   String? _ebayAvgPrice;
+  String? _imageUrl;
   bool _fromScan = false;
 
   // Tracks whether the user has manually typed their own eBay search query.
@@ -48,6 +49,7 @@ class AddCardController extends GetxController {
       gradeController.text      = args['grade'] ?? '';
       ebaySearchController.text = args['searchQuery'] ?? '';
       _ebayAvgPrice             = args['ebayAvgPrice']?.toString();
+      _imageUrl                 = args['imageUrl'];
 
       // If a scan already supplied a search query, treat it as user-provided —
       // don't let the auto-fill below silently replace it.
@@ -142,6 +144,7 @@ class AddCardController extends GetxController {
           : '${playerNameController.text.trim()} ${yearController.text.trim()} ${brandController.text.trim()} ${setNameController.text.trim()} ${parallelController.text.trim()} ${cardNumberController.text.trim()} ${gradeController.text.trim()}'.trim();
 
       await _api.addCard({
+        'imageUrl':            _imageUrl,
         'playerName':          playerNameController.text.trim(),
         'year':                yearController.text.trim(),
         'setName':             setNameController.text.trim().isNotEmpty ? setNameController.text.trim() : null,

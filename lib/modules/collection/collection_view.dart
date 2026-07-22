@@ -8,6 +8,7 @@ import '../../app/theme/app_theme.dart';
 import '../../data/models/card_model.dart';
 import '../routes/app_routes.dart';
 import 'collection_controller.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CollectionView extends GetView<CollectionController> {
   const CollectionView({super.key});
@@ -70,6 +71,14 @@ class CollectionView extends GetView<CollectionController> {
               ),
             ),
           ),
+          Obx(() => Padding(
+            padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 12.h),
+            child: Row(children: [
+              _filterChip('All', 'all'),
+              SizedBox(width: 8.w),
+              _filterChip('🎯 Ready to Sell', 'targetReached'),
+            ]),
+          )),
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value) {
@@ -83,7 +92,12 @@ class CollectionView extends GetView<CollectionController> {
                     children: [
                       Icon(Icons.style_outlined, size: 52.sp, color: AppColors.textMuted),
                       SizedBox(height: 16.h),
-                      Text('No cards found', style: GoogleFonts.inter(fontSize: 16.sp, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                      Text(
+                        controller.filterMode.value == 'targetReached'
+                            ? 'No cards ready to sell yet'
+                            : 'No cards found',
+                        style: GoogleFonts.inter(fontSize: 16.sp, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                      ),
                     ],
                   ),
                 );
@@ -104,7 +118,25 @@ class CollectionView extends GetView<CollectionController> {
       ),
     );
   }
+
+  Widget _filterChip(String label, String value) {
+    final isActive = controller.filterMode.value == value;
+    return GestureDetector(
+      onTap: () => controller.filterMode.value = value,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.accent.withOpacity(0.15) : AppColors.bgCard,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(color: isActive ? AppColors.accent : AppColors.border),
+        ),
+        child: Text(label, style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w600,
+            color: isActive ? AppColors.accent : AppColors.textSecondary)),
+      ),
+    );
+  }
 }
+
 
 class _CollectionCardTile extends StatelessWidget {
   final CardModel card;
@@ -204,7 +236,13 @@ class _CollectionCardTile extends StatelessWidget {
                                 gradient: isTargetReached ? AppColors.profitGradient : AppColors.primaryGradient,
                                 borderRadius: BorderRadius.circular(8.r),
                               ),
-                              child: Icon(Icons.style_rounded, color: Colors.white, size: 18.sp),
+                              child: card.imageUrl != null
+                                  ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8.r),
+                                child: CachedNetworkImage(imageUrl: card.imageUrl!, fit: BoxFit.cover,
+                                    errorWidget: (_, __, ___) => Icon(Icons.style_rounded, color: Colors.white, size: 18.sp)),
+                              )
+                                  : Icon(Icons.style_rounded, color: Colors.white, size: 18.sp),
                             ),
                             SizedBox(width: 12.w),
                             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -344,7 +382,13 @@ class _CollectionCardTile extends StatelessWidget {
                   gradient: card.isTargetReached ? AppColors.accentGradient : AppColors.primaryGradient,
                   borderRadius: BorderRadius.circular(10.r),
                 ),
-                child: Icon(Icons.style_rounded, color: Colors.white, size: 22.sp),
+                child: card.imageUrl != null
+                    ? ClipRRect(
+                  borderRadius: BorderRadius.circular(10.r),
+                  child: CachedNetworkImage(imageUrl: card.imageUrl!, fit: BoxFit.cover,
+                      errorWidget: (_, __, ___) => Icon(Icons.style_rounded, color: Colors.white, size: 22.sp)),
+                )
+                    : Icon(Icons.style_rounded, color: Colors.white, size: 22.sp),
               ),
               SizedBox(width: 12.w),
               Expanded(

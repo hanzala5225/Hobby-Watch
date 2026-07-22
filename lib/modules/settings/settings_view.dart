@@ -123,7 +123,7 @@ class SettingsView extends GetView<SettingsController> {
               controller.requestDeleteAccount, color: AppColors.loss),
 
           SizedBox(height: 40.h),
-          Center(child: Text('Hobby Watch v1.0.0',
+          Center(child: Text('Hobby Watch v1.0.07',
               style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textMuted))),
           SizedBox(height: 6.h),
           Center(child: Text('Sports card profit tracking',

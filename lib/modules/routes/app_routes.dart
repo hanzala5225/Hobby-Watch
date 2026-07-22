@@ -5,6 +5,7 @@ class AppRoutes {
   static const dashboard     = '/dashboard';
   static const collection    = '/collection';
   static const addCard       = '/add-card';
+  static const editCard      = '/edit-card';
   static const cardDetail    = '/card-detail';
   static const scanCard      = '/scan-card';
   static const notifications = '/notifications';

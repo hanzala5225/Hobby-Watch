@@ -13,9 +13,16 @@ class CollectionController extends GetxController {
   final sortBy        = 'created_at'.obs;
   final searchController = TextEditingController();
 
+  // 'all' or 'targetReached' — set from Get.arguments when navigated here
+  // via the dashboard's "Ready to Sell" → View all link.
+  final filterMode = 'all'.obs;
+
   List<CardModel> get filteredCards {
     final q = searchQuery.value.toLowerCase();
-    final active = cards.where((c) => !c.isSold).toList();
+    var active = cards.where((c) => !c.isSold).toList();
+    if (filterMode.value == 'targetReached') {
+      active = active.where((c) => c.isTargetReached).toList();
+    }
     if (q.isEmpty) return active;
     return active.where((c) =>
     c.playerName.toLowerCase().contains(q) ||
@@ -29,6 +36,10 @@ class CollectionController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    final args = Get.arguments;
+    if (args is Map && args['filter'] == 'targetReached') {
+      filterMode.value = 'targetReached';
+    }
     loadCards();
   }
 

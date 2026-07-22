@@ -9,6 +9,8 @@ import '../collection/collection_binding.dart';
 import '../collection/collection_view.dart';
 import '../add_card/add_card_binding.dart';
 import '../add_card/add_card_view.dart';
+import '../edit_card/edit_card_binding.dart';
+import '../edit_card/edit_card_view.dart';
 import '../card_detail/card_detail_binding.dart';
 import '../card_detail/card_detail_view.dart';
 import '../splash/splash_binding.dart';
@@ -37,6 +39,7 @@ class AppPages {
     GetPage(name: AppRoutes.dashboard,     page: () => const DashboardView(),     binding: DashboardBinding(),     transition: Transition.fadeIn),
     GetPage(name: AppRoutes.collection,    page: () => const CollectionView(),    binding: CollectionBinding(),    transition: Transition.rightToLeft),
     GetPage(name: AppRoutes.addCard,       page: () => const AddCardView(),       binding: AddCardBinding(),       transition: Transition.downToUp),
+    GetPage(name: AppRoutes.editCard,      page: () => const EditCardView(),      binding: EditCardBinding(),      transition: Transition.rightToLeft),
     GetPage(name: AppRoutes.cardDetail,    page: () => const CardDetailView(),    binding: CardDetailBinding(),    transition: Transition.rightToLeft),
     GetPage(name: AppRoutes.notifications, page: () => const NotificationsView(), binding: NotificationsBinding(), transition: Transition.rightToLeft),
     GetPage(name: AppRoutes.scanCard,      page: () => const ScanCardView(),      binding: ScanCardBinding(),      transition: Transition.downToUp),

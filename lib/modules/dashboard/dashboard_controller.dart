@@ -18,8 +18,31 @@ class DashboardController extends GetxController {
   final user         = Rx<UserModel?>(null);
   final unreadCount  = 0.obs;
 
-  List<CardModel> get targetReachedCards => cards.where((c) => c.isTargetReached && !c.isSold).toList();
+  // Capped at 6 + sorted by highest margin first (most urgent to sell) — the
+  // header badge next to this section uses summary.cardsAtTarget for the
+  // TRUE total count, since this list is deliberately capped for the
+  // horizontal preview strip. "View all" links to the Collection screen's
+  // Ready-to-Sell filter to see the rest.
+  List<CardModel> get targetReachedCards {
+    final list = cards.where((c) => c.isTargetReached && !c.isSold).toList()
+      ..sort((a, b) => (b.currentMarginPercent ?? 0).compareTo(a.currentMarginPercent ?? 0));
+    return list.take(6).toList();
+  }
   List<CardModel> get recentCards        => cards.where((c) => !c.isSold).take(5).toList();
+
+  // Cards added in the last 7 days — used for the "this week" indicator.
+  // Computed from data already on each card (createdAt), no new backend
+  // tracking needed.
+  int get cardsAddedThisWeek {
+    final weekAgo = DateTime.now().subtract(const Duration(days: 7));
+    return cards.where((c) => c.createdAt.isAfter(weekAgo)).length;
+  }
+
+  double get investedThisWeek {
+    final weekAgo = DateTime.now().subtract(const Duration(days: 7));
+    return cards.where((c) => c.createdAt.isAfter(weekAgo))
+        .fold(0.0, (sum, c) => sum + c.purchasePrice);
+  }
 
   // Called by CardDetailController after marking a card sold — instant UI update
   void updateCardInPlace(CardModel updated) {
