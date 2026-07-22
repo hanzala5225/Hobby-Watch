@@ -232,8 +232,13 @@ class ApiService extends GetxService {
     return List<Map<String, dynamic>>.from(data['history'] ?? []);
   }
 
-  Future<CardModel> markAsSold(String id, double soldPrice) async {
-    final res = await _dio.post('/cards/$id/sold', data: {'soldPrice': soldPrice});
+  Future<CardModel> markAsSold(String id, double soldPrice,
+      {bool soldOutsideEbay = false, double shippingCharge = 0}) async {
+    final res = await _dio.post('/cards/$id/sold', data: {
+      'soldPrice': soldPrice,
+      'soldOutsideEbay': soldOutsideEbay,
+      'shippingCharge': shippingCharge,
+    });
     return CardModel.fromJson(res.data['data'] ?? res.data);
   }
 

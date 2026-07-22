@@ -6,6 +6,7 @@ import '../../data/models/ebay_result_model.dart';
 import '../../data/services/api_service.dart';
 import '../../data/services/ocr_service.dart';
 import '../routes/app_routes.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 enum ScanStep { choose, processing, verify, results, confirm, manual }
 
@@ -89,6 +90,24 @@ class ScanCardController extends GetxController {
   }
 
   Future<void> takePhoto() async {
+    // iOS silently refuses to launch the camera if permission was ever
+    // denied — image_picker alone doesn't handle re-prompting or recovery.
+    // Check explicitly first so the user gets a real explanation instead of
+    // a blank/unresponsive screen.
+    final status = await Permission.camera.request();
+    if (status.isPermanentlyDenied) {
+      errorMessage.value = 'Camera access is turned off. Enable it in Settings to scan cards.';
+      Get.snackbar('Camera Permission Needed', 'Enable camera access in Settings to scan cards.',
+          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16), borderRadius: 12,
+          mainButton: TextButton(onPressed: openAppSettings,
+              child: const Text('Open Settings', style: TextStyle(color: Colors.white))));
+      return;
+    }
+    if (!status.isGranted) {
+      errorMessage.value = 'Camera permission is required to scan cards.';
+      return;
+    }
+
     try {
       final img = await _picker.pickImage(source: ImageSource.camera, imageQuality: 92, maxWidth: 1800);
       if (img == null) return;

@@ -71,6 +71,18 @@ class CardDetailView extends GetView<CardDetailController> {
                               if (isSold || card.isTargetReached) SizedBox(height: 8.h),
                               Text(card.playerName,
                                   style: GoogleFonts.inter(fontSize: 22.sp, fontWeight: FontWeight.w800, color: Colors.white)),
+                              SizedBox(height: 4.h),
+                              Text(
+                                [
+                                  card.year,
+                                  card.brand,
+                                  card.setName,
+                                  card.parallel,
+                                  card.cardNumber != null ? '#${card.cardNumber}' : null,
+                                  card.grade,
+                                ].where((s) => s != null && s.isNotEmpty).join(' • '),
+                                style: GoogleFonts.inter(fontSize: 12.sp, color: Colors.white70, fontWeight: FontWeight.w500),
+                              ),
                             ],
                           ),
                         ),
@@ -80,7 +92,6 @@ class CardDetailView extends GetView<CardDetailController> {
                 ),
               ),
             ),
-
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(20.w),
@@ -115,6 +126,21 @@ class CardDetailView extends GetView<CardDetailController> {
                         color: (card.profitDollar ?? 0) >= 0 ? AppColors.accent : AppColors.loss,
                       )),
                     ]),
+
+                    // Small honest caption instead of a duplicate price block —
+                    // "Market Price" above is already the same number eBay's
+                    // API gives us; this just clarifies what it actually is.
+                    if (!isSold && card.currentEbayAvg30 != null) ...[
+                      SizedBox(height: 8.h),
+                      Row(children: [
+                        Icon(Icons.info_outline_rounded, color: AppColors.textMuted, size: 12.sp),
+                        SizedBox(width: 5.w),
+                        Expanded(child: Text(
+                          'Market Price reflects active eBay listings right now, not a historical average.',
+                          style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textMuted),
+                        )),
+                      ]),
+                    ],
 
                     SizedBox(height: 20.h),
 
@@ -316,5 +342,22 @@ class _PriceBox extends StatelessWidget {
             color: color ?? (accent ? AppColors.primary : AppColors.textPrimary))),
       ]),
     );
+  }
+}
+
+class _AvgColumn extends StatelessWidget {
+  final String label;
+  final double? value;
+  final NumberFormat fmt;
+  const _AvgColumn({required this.label, required this.value, required this.fmt});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      Text(value != null ? fmt.format(value!) : '—',
+          style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+      SizedBox(height: 3.h),
+      Text(label, style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textMuted)),
+    ]);
   }
 }

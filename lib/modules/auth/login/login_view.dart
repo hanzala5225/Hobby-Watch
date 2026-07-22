@@ -32,10 +32,17 @@ class LoginView extends StatelessWidget {
                       width: 44.w,
                       height: 44.w,
                       decoration: BoxDecoration(
-                        gradient: AppColors.heroGradient,
+                        color: AppColors.bgDark,
                         borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(
+                            color: AppColors.border,
+                            width: 1,
+                          )
                       ),
-                      child: Icon(Icons.style_rounded, color: Colors.white, size: 22.sp),
+                      child: Padding(
+                        padding: EdgeInsets.all(8.w),
+                        child: Image.asset('assets/logo/App-Icon-HW.png', fit: BoxFit.contain),
+                      ),
                     ),
                     SizedBox(width: 12.w),
                     Column(

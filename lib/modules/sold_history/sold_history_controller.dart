@@ -11,17 +11,28 @@ class SoldHistoryController extends GetxController {
   // Lifetime stats calculated from sold cards
   double get totalInvested   => soldCards.fold(0, (s, c) => s + c.purchasePrice);
   double get totalSoldFor    => soldCards.fold(0, (s, c) => s + (c.soldPrice ?? 0));
-  double get totalProfit     => totalSoldFor - totalInvested;
+
+  double get totalProfit {
+    return soldCards.fold(0.0, (sum, c) => sum + _afterFees(c) - c.purchasePrice);
+  }
+
   double get avgMargin {
     if (soldCards.isEmpty) return 0;
     final margins = soldCards
-        .where((c) => c.soldPrice != null)
-        .map((c) {
-      final afterFees = (c.soldPrice ?? 0) * (1 - c.ebayFeePercent / 100);
-      return ((afterFees - c.purchasePrice) / c.purchasePrice) * 100;
-    }).toList();
+        .where((c) => c.soldPrice != null && c.purchasePrice > 0)
+        .map((c) => ((_afterFees(c) - c.purchasePrice) / c.purchasePrice) * 100)
+        .toList();
     if (margins.isEmpty) return 0;
     return margins.reduce((a, b) => a + b) / margins.length;
+  }
+
+  // Shared calc: eBay fee applies to (sold price + shipping) combined, and
+  // never applies at all for a sold-outside-eBay sale.
+  double _afterFees(CardModel c) {
+    final soldPrice = c.soldPrice ?? 0;
+    final combined = soldPrice + c.shippingCharge;
+    final feePercent = c.soldOutsideEbay ? 0.0 : c.ebayFeePercent;
+    return combined * (1 - feePercent / 100);
   }
 
   @override

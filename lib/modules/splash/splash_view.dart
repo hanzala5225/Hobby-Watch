@@ -111,29 +111,14 @@ class _SplashBodyState extends State<_SplashBody> with TickerProviderStateMixin 
                           child: ScaleTransition(
                             scale: _pulse,
                             child: Container(
-                              width: 104.w,
-                              height: 104.w,
+                              width: 120.w,
+                              height: 120.w,
                               decoration: BoxDecoration(
-                                gradient: AppColors.heroGradient,
                                 borderRadius: BorderRadius.circular(28.r),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.primary.withOpacity(0.18),
-                                    blurRadius: 32,
-                                    offset: const Offset(0, 12),
-                                    spreadRadius: 2,
-                                  ),
-                                  BoxShadow(
-                                    color: AppColors.accent.withOpacity(0.14),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
                               ),
-                              child: Icon(
-                                Icons.style_rounded,
-                                color: Colors.white,
-                                size: 50.sp,
+                              child: Padding(
+                                padding: EdgeInsets.all(20.w),
+                                child: Image.asset('assets/logo/App-Icon-HW.png', fit: BoxFit.contain),
                               ),
                             ),
                           ),

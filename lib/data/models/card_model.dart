@@ -26,6 +26,9 @@ class CardModel {
   final bool isProfitable;
   final bool isSold;
   final double? soldPrice;
+  final bool soldOutsideEbay;
+  final double shippingCharge;
+  final double? ebayFeeAmount;
   final DateTime? soldAt;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -47,7 +50,7 @@ class CardModel {
     this.addedVia = 'manual',
     required this.purchasePrice,
     this.targetMarginPercent = 30.0,
-    this.ebayFeePercent = 12.9,
+    this.ebayFeePercent = 13.25,
     this.currentEbayAvg30,
     this.currentEbayAvg60,
     this.currentEbayAvg90,
@@ -58,6 +61,9 @@ class CardModel {
     this.isProfitable = false,
     this.isSold = false,
     this.soldPrice,
+    this.soldOutsideEbay = false,
+    this.shippingCharge = 0,
+    this.ebayFeeAmount,
     this.soldAt,
     required this.createdAt,
     required this.updatedAt,
@@ -80,7 +86,7 @@ class CardModel {
     addedVia:             json['addedVia'] ?? 'manual',
     purchasePrice:        (json['purchasePrice'] as num?)?.toDouble() ?? 0.0,
     targetMarginPercent:  (json['targetMarginPercent'] as num?)?.toDouble() ?? 30.0,
-    ebayFeePercent:       (json['ebayFeePercent'] as num?)?.toDouble() ?? 12.9,
+    ebayFeePercent:       (json['ebayFeePercent'] as num?)?.toDouble() ?? 13.25,
     currentEbayAvg30:     (json['currentEbayAvg30'] as num?)?.toDouble(),
     currentEbayAvg60:     (json['currentEbayAvg60'] as num?)?.toDouble(),
     currentEbayAvg90:     (json['currentEbayAvg90'] as num?)?.toDouble(),
@@ -93,6 +99,9 @@ class CardModel {
     isProfitable:         json['isProfitable'] ?? false,
     isSold:               json['isSold'] ?? false,
     soldPrice:            (json['soldPrice'] as num?)?.toDouble(),
+    soldOutsideEbay:      json['soldOutsideEbay'] ?? false,
+    shippingCharge:       (json['shippingCharge'] as num?)?.toDouble() ?? 0,
+    ebayFeeAmount:        (json['ebayFeeAmount'] as num?)?.toDouble(),
     soldAt:               json['soldAt'] != null ? DateTime.parse(json['soldAt']) : null,
     createdAt:            json['createdAt'] != null
         ? DateTime.parse(json['createdAt'])

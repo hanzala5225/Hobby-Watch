@@ -212,7 +212,9 @@ class _SoldCardTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final soldPrice = card.soldPrice ?? 0;
-    final afterFees = soldPrice * (1 - card.ebayFeePercent / 100);
+    final combined = soldPrice + card.shippingCharge;
+    final feePercent = card.soldOutsideEbay ? 0.0 : card.ebayFeePercent;
+    final afterFees = combined * (1 - feePercent / 100);
     final profit = afterFees - card.purchasePrice;
     final marginPct = card.purchasePrice > 0 ? (profit / card.purchasePrice) * 100 : 0.0;
     final isProfit = profit >= 0;

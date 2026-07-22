@@ -12,7 +12,7 @@ class AppConstants {
   static const String keyOnboarded    = 'onboarded';
 
   // ── Business logic ────────────────────────────────────────────────────────
-  static const double ebayFeePercent      = 12.9;
+  static const double ebayFeePercent      = 13.25;
   static const double defaultTargetMargin = 30.0;
 
   // ── Timeouts ─────────────────────────────────────────────────────────────

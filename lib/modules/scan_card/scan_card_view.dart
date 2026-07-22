@@ -56,24 +56,49 @@ class _ChooseStep extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(28.w),
+                      width: 96.w, height: 96.w,
                       decoration: BoxDecoration(
-                        color: AppColors.bgCard,
-                        borderRadius: BorderRadius.circular(20.r),
-                        border: Border.all(color: AppColors.border),
+                        gradient: AppColors.heroGradient,
+                        borderRadius: BorderRadius.circular(24.r),
+                        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.22), blurRadius: 24, offset: const Offset(0, 8))],
                       ),
-                      child: Column(children: [
-                        _AnimatedScanFrame(),
-                        SizedBox(height: 16.h),
-                        Text('Position your card in the frame',
-                            style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textMuted)),
-                      ]),
+                      child: Icon(Icons.add_a_photo_rounded, color: Colors.white, size: 40.sp),
                     ),
+                    SizedBox(height: 28.h),
+                    Text('Add a card to your collection',
+                        style: GoogleFonts.inter(fontSize: 18.sp, fontWeight: FontWeight.w700, color: AppColors.primary),
+                        textAlign: TextAlign.center),
+                    SizedBox(height: 8.h),
+                    Text('Scan it, pick a photo, or enter details yourself',
+                        style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textMuted),
+                        textAlign: TextAlign.center),
+
                     SizedBox(height: 32.h),
-                    Text('How would you like to add?',
-                        style: GoogleFonts.inter(fontSize: 16.sp, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                    SizedBox(height: 20.h),
+
+                    // Error banner — was previously set but never shown
+                    Obx(() {
+                      final err = c.errorMessage.value;
+                      if (err.isEmpty) return const SizedBox();
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: 16.h),
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(12.w),
+                          decoration: BoxDecoration(
+                            color: AppColors.loss.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(color: AppColors.loss.withOpacity(0.25)),
+                          ),
+                          child: Row(children: [
+                            Icon(Icons.error_outline_rounded, color: AppColors.loss, size: 18.sp),
+                            SizedBox(width: 8.w),
+                            Expanded(child: Text(err,
+                                style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.loss, height: 1.4))),
+                          ]),
+                        ),
+                      );
+                    }),
+
                     _OptionButton(icon: Icons.camera_alt_rounded, label: 'Scan with Camera',
                         subtitle: 'Point at card — we read the text', isPrimary: true, onTap: c.takePhoto),
                     SizedBox(height: 12.h),
@@ -609,55 +634,26 @@ class _CardDetailSheet extends StatelessWidget {
                             SizedBox(height: 16.h),
                           ],
 
-                          // ── Info rows ─────────────────────────────────
+                          // Disclaimer, styled as a small card so this
+                          // section still reads as intentional now that the
+                          // shipping/seller details are gone.
                           Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(12.w),
                             decoration: BoxDecoration(
                               color: AppColors.bgDark,
-                              borderRadius: BorderRadius.circular(14.r),
+                              borderRadius: BorderRadius.circular(12.r),
                               border: Border.all(color: AppColors.border),
                             ),
-                            child: Column(children: [
-                              _detailRow(
-                                Icons.local_shipping_outlined, 'Shipping',
-                                item.isFreeShipping ? 'Free'
-                                    : item.shippingCostType == 'FIXED' && item.shippingCost != null
-                                    ? '\$${item.shippingCost!.toStringAsFixed(2)}'
-                                    : 'Calculated at checkout',
-                                valueColor: item.isFreeShipping ? const Color(0xFF2ECC71) : null,
-                              ),
-                              if (item.hasBestOffer) ...[
-                                Divider(height: 1, color: AppColors.divider, indent: 14.w, endIndent: 14.w),
-                                _detailRow(Icons.handshake_outlined, 'Best Offer', 'Available'),
-                              ],
-                              if (item.sellerUsername != null) ...[
-                                Divider(height: 1, color: AppColors.divider, indent: 14.w, endIndent: 14.w),
-                                _detailRow(Icons.storefront_outlined, 'Seller', item.sellerUsername!),
-                              ],
-                              if (item.sellerFeedbackPct != null) ...[
-                                Divider(height: 1, color: AppColors.divider, indent: 14.w, endIndent: 14.w),
-                                _detailRow(Icons.star_rounded, 'Feedback',
-                                  '${item.sellerFeedbackPct!.toStringAsFixed(1)}%'
-                                      '${item.sellerFeedbackScore != null ? " (${item.sellerFeedbackScore})" : ""}',
-                                  valueColor: item.sellerFeedbackPct! >= 99 ? const Color(0xFF2ECC71) : null,
-                                ),
-                              ],
-                              if (item.topRatedSeller) ...[
-                                Divider(height: 1, color: AppColors.divider, indent: 14.w, endIndent: 14.w),
-                                _detailRow(Icons.verified_rounded, 'Badge', 'Top Rated Seller',
-                                    valueColor: const Color(0xFF2ECC71)),
-                              ],
-                              if (item.country != null) ...[
-                                Divider(height: 1, color: AppColors.divider, indent: 14.w, endIndent: 14.w),
-                                _detailRow(Icons.location_on_outlined, 'Ships from', item.country!),
-                              ],
+                            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Icon(Icons.info_outline_rounded, color: AppColors.textMuted, size: 15.sp),
+                              SizedBox(width: 8.w),
+                              Expanded(child: Text(
+                                'Price from active eBay listing — not a sold price. Estimated market value based on current supply.',
+                                style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted, height: 1.5),
+                              )),
                             ]),
                           ),
-
-                          SizedBox(height: 8.h),
-
-                          // eBay disclaimer
-                          Text('Price from active eBay listing — not a sold price. Estimated market value based on current supply.',
-                              style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textMuted, height: 1.5)),
 
                           SizedBox(height: 24.h),
 

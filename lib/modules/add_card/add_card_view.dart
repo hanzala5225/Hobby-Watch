@@ -207,7 +207,7 @@ class AddCardView extends GetView<AddCardController> {
           child: Row(children: [
             Icon(Icons.info_outline, color: AppColors.accent, size: 18.sp),
             SizedBox(width: 10.w),
-            Expanded(child: Text('eBay fees (~12.9%) are automatically deducted from profit calculations.',
+            Expanded(child: Text('eBay fees (~13.25%) are automatically deducted from profit calculations.',
                 style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary, height: 1.4))),
           ]),
         ),
