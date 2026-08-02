@@ -90,29 +90,10 @@ class DashboardView extends GetView<DashboardController> {
             Obx(() => controller.isRefreshing.value
                 ? SizedBox(width: 18.w, height: 18.w, child: const CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2))
                 : IconButton(icon: Icon(Icons.refresh_rounded, color: AppColors.textSecondary, size: 22.sp), onPressed: controller.refreshPrices)),
-            Obx(() => Stack(clipBehavior: Clip.none, children: [
-              IconButton(
-                icon: Icon(Icons.notifications_outlined, color: AppColors.textSecondary, size: 22.sp),
-                onPressed: () => Get.toNamed(AppRoutes.notifications),
-              ),
-              if (controller.unreadCount.value > 0)
-                Positioned(
-                  right: 4,
-                  top: 4,
-                  child: IgnorePointer(
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
-                      constraints: BoxConstraints(minWidth: 16.w, minHeight: 16.w),
-                      decoration: const BoxDecoration(color: AppColors.loss, shape: BoxShape.circle),
-                      alignment: Alignment.center,
-                      child: Text(
-                        controller.unreadCount.value > 9 ? '9+' : '${controller.unreadCount.value}',
-                        style: GoogleFonts.inter(fontSize: 9.sp, fontWeight: FontWeight.w700, color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
-            ])),
+            IconButton(
+              icon: Icon(Icons.settings_rounded, color: AppColors.textSecondary, size: 22.sp),
+              onPressed: () => Get.toNamed(AppRoutes.settings),
+            ),
           ],
         ),
       ),
@@ -358,7 +339,7 @@ class DashboardView extends GetView<DashboardController> {
                 badgeCount: controller.unreadCount.value,
                 onTap: () => Get.toNamed(AppRoutes.notifications),
               )),
-              _NavItem(icon: Icons.settings_rounded, label: 'Settings', isActive: false, onTap: () => Get.toNamed(AppRoutes.settings)),
+              _NavItem(icon: Icons.sell_rounded, label: 'Sold History', isActive: false, onTap: () => Get.toNamed(AppRoutes.soldHistory)),
             ],
           ),
         ),
@@ -539,7 +520,7 @@ class DashboardView extends GetView<DashboardController> {
                   SizedBox(height: 20.h),
 
                   // Version footer
-                  Center(child: Text('Hobby Watch v1.0.08',
+                  Center(child: Text('Hobby Watch v1.0.07',
                       style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted))),
                   SizedBox(height: 4.h),
                   Center(child: Text('Sports card profit tracking',

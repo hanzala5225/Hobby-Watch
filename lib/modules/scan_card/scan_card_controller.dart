@@ -10,10 +10,15 @@ import 'package:permission_handler/permission_handler.dart';
 
 enum ScanStep { choose, processing, verify, results, confirm }
 
-class ScanCardController extends GetxController {
+class ScanCardController extends GetxController with WidgetsBindingObserver {
   final _ocr  = Get.find<OcrService>();
   final _api  = Get.find<ApiService>();
   final _picker = ImagePicker();
+
+  // Set right before we send the user to iOS/Android Settings, so that when
+  // they come back we know to re-check the camera permission automatically
+  // instead of waiting for them to tap "Scan with Camera" again.
+  bool _awaitingSettingsReturn = false;
 
   // "Add Card" (the old Verify Details screen) is now the true entry point —
   // tapping Add Card lands here directly, with the camera/gallery scanner
@@ -47,6 +52,7 @@ class ScanCardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     playerNameController.addListener(_composeQuery);
     yearController.addListener(_composeQuery);
     setNameController.addListener(_composeQuery);
@@ -89,18 +95,50 @@ class ScanCardController extends GetxController {
     _autoFilling = false;
   }
 
+  // Called automatically when the app comes back to the foreground — e.g.
+  // Tim backgrounds the app, flips Camera ON in Settings, then returns.
+  // iOS/Android don't always refresh a running app's cached permission
+  // state on simple resume, so we explicitly re-check here rather than
+  // waiting for another tap on "Scan with Camera".
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _awaitingSettingsReturn) {
+      _awaitingSettingsReturn = false;
+      _recheckCameraPermission();
+    }
+  }
+
+  Future<void> _recheckCameraPermission() async {
+    final status = await Permission.camera.status;
+    if (status.isGranted) {
+      errorMessage.value = '';
+    }
+    // If it's still denied here, the OS-level toggle genuinely isn't on,
+    // or (on iOS especially) the change needs a full app restart to take
+    // effect — the error banner's copy covers that case.
+  }
+
   Future<void> takePhoto() async {
     // iOS silently refuses to launch the camera if permission was ever
     // denied — image_picker alone doesn't handle re-prompting or recovery.
-    // Check explicitly first so the user gets a real explanation instead of
-    // a blank/unresponsive screen.
-    final status = await Permission.camera.request();
-    if (status.isPermanentlyDenied) {
-      errorMessage.value = 'Camera access is turned off. Enable it in Settings to scan cards.';
+    // Check current status first (non-prompting) rather than always calling
+    // request(), since request() on an already-decided permission can hand
+    // back a stale cached result on some OS/plugin versions.
+    var status = await Permission.camera.status;
+    if (status.isDenied) {
+      // Only truly undetermined permissions get the system dialog.
+      status = await Permission.camera.request();
+    }
+    if (status.isPermanentlyDenied || status.isRestricted) {
+      _awaitingSettingsReturn = true;
+      errorMessage.value = 'Camera access is turned off. Enable it in Settings to scan cards. '
+          'If you just enabled it, please fully close and reopen Hobby Watch, then try again.';
       Get.snackbar('Camera Permission Needed', 'Enable camera access in Settings to scan cards.',
           snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16), borderRadius: 12,
-          mainButton: TextButton(onPressed: openAppSettings,
-              child: const Text('Open Settings', style: TextStyle(color: Colors.white))));
+          mainButton: TextButton(onPressed: () {
+            _awaitingSettingsReturn = true;
+            openAppSettings();
+          }, child: const Text('Open Settings', style: TextStyle(color: Colors.white))));
       return;
     }
     if (!status.isGranted) {
@@ -193,7 +231,7 @@ class ScanCardController extends GetxController {
   }
 
   void confirmAndAddCard() {
-    Get.toNamed(AppRoutes.addCard, arguments: {   // was Get.offNamed
+    Get.toNamed(AppRoutes.addCard, arguments: {
       'fromScan':    true,
       'playerName':  playerNameController.text,
       'year':        yearController.text,
@@ -209,7 +247,7 @@ class ScanCardController extends GetxController {
   }
 
   void goManualAdd() {
-    Get.toNamed(AppRoutes.addCard, arguments: {   // was Get.offNamed
+    Get.toNamed(AppRoutes.addCard, arguments: {
       'fromScan':    false,
       'playerName':  playerNameController.text,
       'year':        yearController.text,
@@ -242,6 +280,7 @@ class ScanCardController extends GetxController {
 
   @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
     playerNameController.removeListener(_composeQuery);
     yearController.removeListener(_composeQuery);
     setNameController.removeListener(_composeQuery);
