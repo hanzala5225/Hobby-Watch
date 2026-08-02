@@ -17,14 +17,23 @@ class CardDetailController extends GetxController {
   final isMarkingSold = false.obs;
   final priceHistory  = <Map<String, dynamic>>[].obs;
 
-
   // Price History loading/pagination/filter state
-  final isLoadingHistory     = false.obs; // initial load for the current filter
-  final isLoadingMoreHistory = false.obs; // "load more" page in progress
-  final hasMoreHistory       = false.obs;
-  final selectedHistoryRange = 'all'.obs; // 'today' | '7d' | '30d' | 'all'
-  static const _historyPageSize = 30;
-  int _historyOffset = 0;
+  final isLoadingHistory     = false.obs;
+  final selectedHistoryRange = 'today'.obs; // 'today' | '7d' | '30d' | 'all'
+  final currentHistoryPage   = 1.obs;       // 1-based
+  final totalHistoryPages    = 1.obs;
+  // ~18-22 snapshots/day at an hourly refresh job, so this roughly lines up
+  // one page with one day's worth of data.
+  static const _historyPageSize = 20;
+
+  // Progress summary for the current filter (earliest vs latest snapshot in
+  // range) — independent of which page is showing.
+  final progressStartPrice = Rxn<double>();
+  final progressEndPrice   = Rxn<double>();
+  final progressDeltaDollar = Rxn<double>();
+  final progressDeltaPercent = Rxn<double>();
+  final progressStartAt = Rxn<DateTime>();
+  final progressEndAt   = Rxn<DateTime>();
 
   @override
   void onInit() {
@@ -49,54 +58,82 @@ class CardDetailController extends GetxController {
   }
 
   // Switches the date-range filter (Today / 7 Days / 30 Days / All since
-  // the card was added) and reloads from the first page.
+  // the card was added) and reloads from page 1.
   Future<void> setHistoryRange(String range) async {
     if (selectedHistoryRange.value == range) return;
     selectedHistoryRange.value = range;
     await loadHistory();
   }
 
-  // Resets to page 1 for the current filter. Used on initial load, after a
+  // Computes the boundary on-DEVICE, in the user's actual local timezone,
+  // rather than letting the server guess using its own UTC clock. This is
+  // what fixes "Today" showing yesterday's data for anyone not in UTC —
+  // for Pakistan (UTC+5), a server-side UTC midnight boundary lands 5 hours
+  // into the user's real day, so records from the start of their local day
+  // were being excluded/misdated relative to what they'd expect.
+  DateTime _computeSinceUtc(String range) {
+    final now = DateTime.now();
+    switch (range) {
+      case 'today':
+      // Local midnight, converted to the equivalent UTC instant.
+        return DateTime(now.year, now.month, now.day).toUtc();
+      case '7d':
+        return now.subtract(const Duration(days: 7)).toUtc();
+      case '30d':
+        return now.subtract(const Duration(days: 30)).toUtc();
+      default: // 'all'
+        return card.value.createdAt.toUtc();
+    }
+  }
+
+  // Loads page 1 for the current filter. Used on initial load, after a
   // manual price refresh, and whenever the filter changes.
   Future<void> loadHistory() async {
-    _historyOffset = 0;
+    currentHistoryPage.value = 1;
+    await _loadPage(1);
+  }
+
+  // Jumps directly to a specific page number for the current filter.
+  Future<void> goToHistoryPage(int page) async {
+    if (page < 1 || page > totalHistoryPages.value || page == currentHistoryPage.value) return;
+    await _loadPage(page);
+  }
+
+  Future<void> _loadPage(int page) async {
     isLoadingHistory.value = true;
     try {
-      final page = await _api.getPriceHistory(
+      final since = _computeSinceUtc(selectedHistoryRange.value);
+      final result = await _api.getPriceHistory(
         card.value.id,
         limit: _historyPageSize,
-        offset: 0,
+        offset: (page - 1) * _historyPageSize,
         range: selectedHistoryRange.value,
+        sinceUtc: since,
       );
-      priceHistory.assignAll(page.history);
-      hasMoreHistory.value = page.hasMore;
-      _historyOffset = page.history.length;
+      priceHistory.assignAll(result.history);
+      currentHistoryPage.value = page;
+      totalHistoryPages.value = result.totalCount == 0
+          ? 1
+          : (result.totalCount / _historyPageSize).ceil();
+
+      progressStartPrice.value = result.earliestAvg30;
+      progressEndPrice.value = result.latestAvg30;
+      progressDeltaDollar.value = result.deltaDollar;
+      progressDeltaPercent.value = result.deltaPercent;
+      progressStartAt.value = result.earliestFetchedAt;
+      progressEndAt.value = result.latestFetchedAt;
     } catch (_) {
     } finally {
       isLoadingHistory.value = false;
     }
   }
 
-  // Fetches the next page and appends it, for pagination at the bottom of
-  // the Price History list.
-  Future<void> loadMoreHistory() async {
-    if (isLoadingMoreHistory.value || !hasMoreHistory.value) return;
-    isLoadingMoreHistory.value = true;
-    try {
-      final page = await _api.getPriceHistory(
-        card.value.id,
-        limit: _historyPageSize,
-        offset: _historyOffset,
-        range: selectedHistoryRange.value,
-      );
-      priceHistory.addAll(page.history);
-      hasMoreHistory.value = page.hasMore;
-      _historyOffset += page.history.length;
-    } catch (_) {
-    } finally {
-      isLoadingMoreHistory.value = false;
-    }
-  }
+  // "This Month's Progress" only makes sense once the card has actually
+  // been tracked for a month — otherwise it's just showing the same handful
+  // of days as the 7-day view. True once at least 30 days have passed since
+  // the card was added.
+  bool get hasMonthOfHistory =>
+      DateTime.now().difference(card.value.createdAt).inDays >= 30;
 
   Future<void> deleteCard() async {
     try {

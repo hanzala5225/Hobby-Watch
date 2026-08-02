@@ -228,7 +228,112 @@ class CardDetailView extends GetView<CardDetailController> {
                     // ── Price History ─────────────────────────────────────
                     Text('Price History',
                         style: GoogleFonts.inter(fontSize: 15.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                    SizedBox(height: 10.h),
+                    SizedBox(height: 12.h),
+
+                    // Progress summary — opening vs latest price for whatever
+                    // range is currently selected. This is computed from the
+                    // whole filtered range on the backend, not just the
+                    // visible page, so it stays accurate as you page through.
+                    Obx(() {
+                      final range = controller.selectedHistoryRange.value;
+                      // "This Month's Progress" is only meaningful once the
+                      // card has actually been tracked for 30+ days —
+                      // otherwise it's just re-showing the same few days as
+                      // the 7-day view.
+                      if (range == '30d' && !controller.hasMonthOfHistory) {
+                        return Container(
+                          padding: EdgeInsets.all(14.w),
+                          margin: EdgeInsets.only(bottom: 12.h),
+                          decoration: BoxDecoration(
+                            color: AppColors.bgSurface,
+                            borderRadius: BorderRadius.circular(14.r),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Row(children: [
+                            Icon(Icons.hourglass_empty_rounded, color: AppColors.textMuted, size: 16.sp),
+                            SizedBox(width: 8.w),
+                            Expanded(child: Text(
+                              'Monthly progress unlocks once this card has been tracked for 30 days.',
+                              style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted),
+                            )),
+                          ]),
+                        );
+                      }
+
+                      final start = controller.progressStartPrice.value;
+                      final end = controller.progressEndPrice.value;
+                      if (start == null || end == null) return const SizedBox();
+
+                      final delta = controller.progressDeltaDollar.value ?? 0;
+                      final deltaPct = controller.progressDeltaPercent.value ?? 0;
+                      final isUp = delta >= 0;
+                      final title = switch (range) {
+                        'today' => "Today's Progress",
+                        '7d'    => "This Week's Progress",
+                        '30d'   => "This Month's Progress",
+                        _       => 'All-Time Progress',
+                      };
+
+                      return Container(
+                        padding: EdgeInsets.all(14.w),
+                        margin: EdgeInsets.only(bottom: 12.h),
+                        decoration: BoxDecoration(
+                          gradient: isUp ? AppColors.profitGradient : null,
+                          color: isUp ? null : AppColors.loss.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(14.r),
+                          border: isUp ? null : Border.all(color: AppColors.loss.withOpacity(0.25)),
+                        ),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(title,
+                              style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w700,
+                                  color: isUp ? Colors.white70 : AppColors.loss)),
+                          SizedBox(height: 8.h),
+                          Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text('Started at', style: GoogleFonts.inter(fontSize: 10.sp,
+                                  color: isUp ? Colors.white60 : AppColors.textMuted)),
+                              Text(fmt.format(start), style: GoogleFonts.inter(fontSize: 16.sp, fontWeight: FontWeight.w700,
+                                  color: isUp ? Colors.white : AppColors.textPrimary)),
+                            ])),
+                            Icon(isUp ? Icons.arrow_forward_rounded : Icons.arrow_forward_rounded,
+                                color: isUp ? Colors.white60 : AppColors.textMuted, size: 16.sp),
+                            SizedBox(width: 8.w),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text('Now', style: GoogleFonts.inter(fontSize: 10.sp,
+                                  color: isUp ? Colors.white60 : AppColors.textMuted)),
+                              Text(fmt.format(end), style: GoogleFonts.inter(fontSize: 16.sp, fontWeight: FontWeight.w700,
+                                  color: isUp ? Colors.white : AppColors.textPrimary)),
+                            ])),
+                          ]),
+                          SizedBox(height: 8.h),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                            decoration: BoxDecoration(
+                              color: isUp ? Colors.white.withOpacity(0.18) : AppColors.loss.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(20.r),
+                            ),
+                            child: Text(
+                              '${isUp ? "+" : ""}${fmt.format(delta)} (${isUp ? "+" : ""}${deltaPct.toStringAsFixed(1)}%)',
+                              style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w700,
+                                  color: isUp ? Colors.white : AppColors.loss),
+                            ),
+                          ),
+                        ]),
+                      );
+                    }),
+
+                    // Numbered pagination — placed above the range filter so
+                    // it's clear which day-range's pages you're browsing.
+                    Obx(() {
+                      if (controller.totalHistoryPages.value <= 1) return const SizedBox();
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: 12.h),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(children: _buildPageNumbers(controller)),
+                        ),
+                      );
+                    }),
 
                     // Date-range filter chips
                     Obx(() => Row(
@@ -274,65 +379,39 @@ class CardDetailView extends GetView<CardDetailController> {
                               style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textMuted))),
                         );
                       }
-                      return Column(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.bgCard,
-                              borderRadius: BorderRadius.circular(16.r),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: Column(
-                              children: controller.priceHistory.map((h) {
-                                final avg = (h['avg30'] as num?)?.toDouble();
-                                final m = (h['marginPercent'] as num?)?.toDouble() ?? 0;
-                                final src = h['refreshSource'] ?? 'background';
-                                final date = h['fetchedAt'] != null
-                                    ? DateTime.parse(h['fetchedAt']).toLocal()
-                                    : DateTime.now();
-                                return Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                                  decoration: BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.divider))),
-                                  child: Row(children: [
-                                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                      Text(DateFormat('MMM d, h:mm a').format(date),
-                                          style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary)),
-                                      Text(src, style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textMuted)),
-                                    ])),
-                                    Text(avg != null ? fmt.format(avg) : '—',
-                                        style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                                    SizedBox(width: 8.w),
-                                    Text('${m >= 0 ? "+" : ""}${m.toStringAsFixed(1)}%',
-                                        style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w600,
-                                            color: m >= 0 ? AppColors.accent : AppColors.loss)),
-                                  ]),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                          if (controller.hasMoreHistory.value) ...[
-                            SizedBox(height: 10.h),
-                            GestureDetector(
-                              onTap: controller.isLoadingMoreHistory.value ? null : controller.loadMoreHistory,
-                              child: Container(
-                                width: double.infinity,
-                                padding: EdgeInsets.symmetric(vertical: 12.h),
-                                decoration: BoxDecoration(
-                                  color: AppColors.bgCard,
-                                  borderRadius: BorderRadius.circular(12.r),
-                                  border: Border.all(color: AppColors.border),
-                                ),
-                                child: Center(
-                                  child: controller.isLoadingMoreHistory.value
-                                      ? SizedBox(width: 18.w, height: 18.w,
-                                      child: const CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2))
-                                      : Text('Load More',
-                                      style: GoogleFonts.inter(fontSize: 13.sp, fontWeight: FontWeight.w600, color: AppColors.accent)),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.bgCard,
+                          borderRadius: BorderRadius.circular(16.r),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          children: controller.priceHistory.map((h) {
+                            final avg = (h['avg30'] as num?)?.toDouble();
+                            final m = (h['marginPercent'] as num?)?.toDouble() ?? 0;
+                            final src = h['refreshSource'] ?? 'background';
+                            final date = h['fetchedAt'] != null
+                                ? DateTime.parse(h['fetchedAt']).toLocal()
+                                : DateTime.now();
+                            return Container(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                              decoration: BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.divider))),
+                              child: Row(children: [
+                                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Text(DateFormat('MMM d, h:mm a').format(date),
+                                      style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary)),
+                                  Text(src, style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textMuted)),
+                                ])),
+                                Text(avg != null ? fmt.format(avg) : '—',
+                                    style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                                SizedBox(width: 8.w),
+                                Text('${m >= 0 ? "+" : ""}${m.toStringAsFixed(1)}%',
+                                    style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w600,
+                                        color: m >= 0 ? AppColors.accent : AppColors.loss)),
+                              ]),
+                            );
+                          }).toList(),
+                        ),
                       );
                     }),
 
@@ -347,6 +426,50 @@ class CardDetailView extends GetView<CardDetailController> {
     );
   }
 
+  // Windowed numbered pagination: first page, last page, current page ±1,
+  // with "…" collapsing the gaps. Keeps the bar usable even for a card
+  // that's been tracked for months (lots of pages under "All").
+  List<Widget> _buildPageNumbers(CardDetailController controller) {
+    final current = controller.currentHistoryPage.value;
+    final total = controller.totalHistoryPages.value;
+    final pages = <int>{1, total, current};
+    if (current > 1) pages.add(current - 1);
+    if (current < total) pages.add(current + 1);
+    final sorted = pages.where((p) => p >= 1 && p <= total).toList()..sort();
+
+    final widgets = <Widget>[];
+    int? prev;
+    for (final p in sorted) {
+      if (prev != null && p - prev > 1) {
+        widgets.add(Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4.w),
+          child: Text('…', style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textMuted)),
+        ));
+      }
+      widgets.add(_pageNumberButton(p, p == current, controller));
+      widgets.add(SizedBox(width: 6.w));
+      prev = p;
+    }
+    return widgets;
+  }
+
+  Widget _pageNumberButton(int page, bool isSelected, CardDetailController controller) {
+    return GestureDetector(
+      onTap: () => controller.goToHistoryPage(page),
+      child: Container(
+        width: 32.w, height: 32.w,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.accent : AppColors.bgCard,
+          borderRadius: BorderRadius.circular(8.r),
+          border: Border.all(color: isSelected ? AppColors.accent : AppColors.border),
+        ),
+        child: Text('$page',
+            style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w700,
+                color: isSelected ? Colors.white : AppColors.textSecondary)),
+      ),
+    );
+  }
   Widget _rangeChip(String label, String value) {
     final isSelected = controller.selectedHistoryRange.value == value;
     return GestureDetector(

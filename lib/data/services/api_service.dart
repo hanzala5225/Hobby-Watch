@@ -222,17 +222,24 @@ class ApiService extends GetxService {
   }
 
   Future<PriceHistoryPage> getPriceHistory(String id,
-      {int limit = 30, int offset = 0, String range = 'all'}) async {
+      {int limit = 30, int offset = 0, String range = 'all', DateTime? sinceUtc}) async {
     final res = await _dio.get('/cards/$id/history', queryParameters: {
       'limit': limit,
       'offset': offset,
       'range': range,
+      if (sinceUtc != null) 'sinceUtc': sinceUtc.toUtc().toIso8601String(),
     });
     final data = res.data['data'];
     return PriceHistoryPage(
       history: List<Map<String, dynamic>>.from(data['history'] ?? []),
       hasMore: data['hasMore'] ?? false,
       totalCount: data['totalCount'] ?? 0,
+      earliestAvg30: (data['earliestAvg30'] as num?)?.toDouble(),
+      earliestFetchedAt: data['earliestFetchedAt'] != null ? DateTime.parse(data['earliestFetchedAt']) : null,
+      latestAvg30: (data['latestAvg30'] as num?)?.toDouble(),
+      latestFetchedAt: data['latestFetchedAt'] != null ? DateTime.parse(data['latestFetchedAt']) : null,
+      deltaDollar: (data['deltaDollar'] as num?)?.toDouble(),
+      deltaPercent: (data['deltaPercent'] as num?)?.toDouble(),
     );
   }
 

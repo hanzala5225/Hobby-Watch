@@ -157,10 +157,22 @@ class PriceHistoryPage {
   final List<Map<String, dynamic>> history;
   final bool hasMore;
   final int totalCount;
+  final double? earliestAvg30;
+  final DateTime? earliestFetchedAt;
+  final double? latestAvg30;
+  final DateTime? latestFetchedAt;
+  final double? deltaDollar;
+  final double? deltaPercent;
 
   PriceHistoryPage({
     required this.history,
     required this.hasMore,
     required this.totalCount,
+    this.earliestAvg30,
+    this.earliestFetchedAt,
+    this.latestAvg30,
+    this.latestFetchedAt,
+    this.deltaDollar,
+    this.deltaPercent,
   });
 }
