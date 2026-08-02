@@ -152,3 +152,15 @@ class PortfolioSummary {
 
   static PortfolioSummary empty() => PortfolioSummary();
 }
+
+class PriceHistoryPage {
+  final List<Map<String, dynamic>> history;
+  final bool hasMore;
+  final int totalCount;
+
+  PriceHistoryPage({
+    required this.history,
+    required this.hasMore,
+    required this.totalCount,
+  });
+}

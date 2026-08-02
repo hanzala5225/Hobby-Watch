@@ -228,8 +228,40 @@ class CardDetailView extends GetView<CardDetailController> {
                     // ── Price History ─────────────────────────────────────
                     Text('Price History',
                         style: GoogleFonts.inter(fontSize: 15.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                    SizedBox(height: 10.h),
+
+                    // Date-range filter chips
+                    Obx(() => Row(
+                      children: [
+                        _rangeChip('Today', 'today'),
+                        SizedBox(width: 8.w),
+                        _rangeChip('7 Days', '7d'),
+                        SizedBox(width: 8.w),
+                        _rangeChip('30 Days', '30d'),
+                        SizedBox(width: 8.w),
+                        _rangeChip('All', 'all'),
+                      ],
+                    )),
                     SizedBox(height: 12.h),
+
                     Obx(() {
+                      // Initial load for the current filter — show a spinner
+                      // instead of briefly flashing "No history yet." before
+                      // the real data arrives.
+                      if (controller.isLoadingHistory.value) {
+                        return Container(
+                          padding: EdgeInsets.all(24.w),
+                          decoration: BoxDecoration(
+                            color: AppColors.bgCard,
+                            borderRadius: BorderRadius.circular(16.r),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Center(child: SizedBox(
+                            width: 22.w, height: 22.w,
+                            child: const CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2.5),
+                          )),
+                        );
+                      }
                       if (controller.priceHistory.isEmpty) {
                         return Container(
                           padding: EdgeInsets.all(20.w),
@@ -242,39 +274,65 @@ class CardDetailView extends GetView<CardDetailController> {
                               style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textMuted))),
                         );
                       }
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.bgCard,
-                          borderRadius: BorderRadius.circular(16.r),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Column(
-                          children: controller.priceHistory.take(10).map((h) {
-                            final avg = (h['avg30'] as num?)?.toDouble();
-                            final m = (h['marginPercent'] as num?)?.toDouble() ?? 0;
-                            final src = h['refreshSource'] ?? 'background';
-                            final date = h['fetchedAt'] != null
-                                ? DateTime.parse(h['fetchedAt']).toLocal()
-                                : DateTime.now();
-                            return Container(
-                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                              decoration: BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.divider))),
-                              child: Row(children: [
-                                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Text(DateFormat('MMM d, h:mm a').format(date),
-                                      style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary)),
-                                  Text(src, style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textMuted)),
-                                ])),
-                                Text(avg != null ? fmt.format(avg) : '—',
-                                    style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                                SizedBox(width: 8.w),
-                                Text('${m >= 0 ? "+" : ""}${m.toStringAsFixed(1)}%',
-                                    style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w600,
-                                        color: m >= 0 ? AppColors.accent : AppColors.loss)),
-                              ]),
-                            );
-                          }).toList(),
-                        ),
+                      return Column(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.bgCard,
+                              borderRadius: BorderRadius.circular(16.r),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Column(
+                              children: controller.priceHistory.map((h) {
+                                final avg = (h['avg30'] as num?)?.toDouble();
+                                final m = (h['marginPercent'] as num?)?.toDouble() ?? 0;
+                                final src = h['refreshSource'] ?? 'background';
+                                final date = h['fetchedAt'] != null
+                                    ? DateTime.parse(h['fetchedAt']).toLocal()
+                                    : DateTime.now();
+                                return Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                                  decoration: BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.divider))),
+                                  child: Row(children: [
+                                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                      Text(DateFormat('MMM d, h:mm a').format(date),
+                                          style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary)),
+                                      Text(src, style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textMuted)),
+                                    ])),
+                                    Text(avg != null ? fmt.format(avg) : '—',
+                                        style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                                    SizedBox(width: 8.w),
+                                    Text('${m >= 0 ? "+" : ""}${m.toStringAsFixed(1)}%',
+                                        style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w600,
+                                            color: m >= 0 ? AppColors.accent : AppColors.loss)),
+                                  ]),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          if (controller.hasMoreHistory.value) ...[
+                            SizedBox(height: 10.h),
+                            GestureDetector(
+                              onTap: controller.isLoadingMoreHistory.value ? null : controller.loadMoreHistory,
+                              child: Container(
+                                width: double.infinity,
+                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                                decoration: BoxDecoration(
+                                  color: AppColors.bgCard,
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: Center(
+                                  child: controller.isLoadingMoreHistory.value
+                                      ? SizedBox(width: 18.w, height: 18.w,
+                                      child: const CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2))
+                                      : Text('Load More',
+                                      style: GoogleFonts.inter(fontSize: 13.sp, fontWeight: FontWeight.w600, color: AppColors.accent)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       );
                     }),
 
@@ -286,6 +344,24 @@ class CardDetailView extends GetView<CardDetailController> {
           ],
         );
       }),
+    );
+  }
+
+  Widget _rangeChip(String label, String value) {
+    final isSelected = controller.selectedHistoryRange.value == value;
+    return GestureDetector(
+      onTap: () => controller.setHistoryRange(value),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.accent : AppColors.bgCard,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(color: isSelected ? AppColors.accent : AppColors.border),
+        ),
+        child: Text(label,
+            style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : AppColors.textSecondary)),
+      ),
     );
   }
 

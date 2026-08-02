@@ -221,10 +221,19 @@ class ApiService extends GetxService {
     return CardModel.fromJson(res.data['data'] ?? res.data);
   }
 
-  Future<List<Map<String, dynamic>>> getPriceHistory(String id, {int limit = 30}) async {
-    final res = await _dio.get('/cards/$id/history', queryParameters: {'limit': limit});
+  Future<PriceHistoryPage> getPriceHistory(String id,
+      {int limit = 30, int offset = 0, String range = 'all'}) async {
+    final res = await _dio.get('/cards/$id/history', queryParameters: {
+      'limit': limit,
+      'offset': offset,
+      'range': range,
+    });
     final data = res.data['data'];
-    return List<Map<String, dynamic>>.from(data['history'] ?? []);
+    return PriceHistoryPage(
+      history: List<Map<String, dynamic>>.from(data['history'] ?? []),
+      hasMore: data['hasMore'] ?? false,
+      totalCount: data['totalCount'] ?? 0,
+    );
   }
 
   Future<CardModel> markAsSold(String id, double soldPrice,

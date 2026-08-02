@@ -17,6 +17,15 @@ class CardDetailController extends GetxController {
   final isMarkingSold = false.obs;
   final priceHistory  = <Map<String, dynamic>>[].obs;
 
+
+  // Price History loading/pagination/filter state
+  final isLoadingHistory     = false.obs; // initial load for the current filter
+  final isLoadingMoreHistory = false.obs; // "load more" page in progress
+  final hasMoreHistory       = false.obs;
+  final selectedHistoryRange = 'all'.obs; // 'today' | '7d' | '30d' | 'all'
+  static const _historyPageSize = 30;
+  int _historyOffset = 0;
+
   @override
   void onInit() {
     super.onInit();
@@ -39,11 +48,54 @@ class CardDetailController extends GetxController {
     }
   }
 
+  // Switches the date-range filter (Today / 7 Days / 30 Days / All since
+  // the card was added) and reloads from the first page.
+  Future<void> setHistoryRange(String range) async {
+    if (selectedHistoryRange.value == range) return;
+    selectedHistoryRange.value = range;
+    await loadHistory();
+  }
+
+  // Resets to page 1 for the current filter. Used on initial load, after a
+  // manual price refresh, and whenever the filter changes.
   Future<void> loadHistory() async {
+    _historyOffset = 0;
+    isLoadingHistory.value = true;
     try {
-      final h = await _api.getPriceHistory(card.value.id);
-      priceHistory.assignAll(h);
-    } catch (_) {}
+      final page = await _api.getPriceHistory(
+        card.value.id,
+        limit: _historyPageSize,
+        offset: 0,
+        range: selectedHistoryRange.value,
+      );
+      priceHistory.assignAll(page.history);
+      hasMoreHistory.value = page.hasMore;
+      _historyOffset = page.history.length;
+    } catch (_) {
+    } finally {
+      isLoadingHistory.value = false;
+    }
+  }
+
+  // Fetches the next page and appends it, for pagination at the bottom of
+  // the Price History list.
+  Future<void> loadMoreHistory() async {
+    if (isLoadingMoreHistory.value || !hasMoreHistory.value) return;
+    isLoadingMoreHistory.value = true;
+    try {
+      final page = await _api.getPriceHistory(
+        card.value.id,
+        limit: _historyPageSize,
+        offset: _historyOffset,
+        range: selectedHistoryRange.value,
+      );
+      priceHistory.addAll(page.history);
+      hasMoreHistory.value = page.hasMore;
+      _historyOffset += page.history.length;
+    } catch (_) {
+    } finally {
+      isLoadingMoreHistory.value = false;
+    }
   }
 
   Future<void> deleteCard() async {
@@ -83,8 +135,8 @@ class CardDetailController extends GetxController {
         Get.snackbar('Invalid Price', 'Please enter a valid sold price.',
             snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16), borderRadius: 12);
         _disposeAfterDialogCloses(soldPriceController);
-        shippingChargeController.dispose();
-        taxChargedController.dispose();
+        _disposeAfterDialogCloses(shippingChargeController);
+        _disposeAfterDialogCloses(taxChargedController);
         return;
       }
       // Shipping and tax are irrelevant once sold-outside-eBay is checked —
@@ -97,9 +149,16 @@ class CardDetailController extends GetxController {
           : (double.tryParse(taxChargedController.text.replaceAll(',', '.')) ?? 0.0);
       await _doMarkSold(price, soldOutsideEbay.value, shipping, tax);
     }
+    // All three controllers back the same Listenable.merge() the fee-preview
+    // AnimatedBuilder listens to. The dialog's close/fade transition is
+    // still animating for a moment after Navigator.pop returns, so disposing
+    // any of them immediately (while that transition is still tearing down
+    // the widget tree) throws "used after being disposed" and can cascade
+    // into a full red-screen crash. All three must dispose on the same
+    // delayed timer as soldPriceController, not immediately.
     _disposeAfterDialogCloses(soldPriceController);
-    shippingChargeController.dispose();
-    taxChargedController.dispose();
+    _disposeAfterDialogCloses(shippingChargeController);
+    _disposeAfterDialogCloses(taxChargedController);
   }
 
   void _disposeAfterDialogCloses(TextEditingController controller) {
