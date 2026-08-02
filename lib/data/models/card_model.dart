@@ -28,6 +28,8 @@ class CardModel {
   final double? soldPrice;
   final bool soldOutsideEbay;
   final double shippingCharge;
+  final double taxCharged;
+  final double ebayFlatFeeAmount;
   final double? ebayFeeAmount;
   final DateTime? soldAt;
   final DateTime createdAt;
@@ -63,6 +65,8 @@ class CardModel {
     this.soldPrice,
     this.soldOutsideEbay = false,
     this.shippingCharge = 0,
+    this.taxCharged = 0,
+    this.ebayFlatFeeAmount = 0,
     this.ebayFeeAmount,
     this.soldAt,
     required this.createdAt,
@@ -101,6 +105,8 @@ class CardModel {
     soldPrice:            (json['soldPrice'] as num?)?.toDouble(),
     soldOutsideEbay:      json['soldOutsideEbay'] ?? false,
     shippingCharge:       (json['shippingCharge'] as num?)?.toDouble() ?? 0,
+    taxCharged:           (json['taxCharged'] as num?)?.toDouble() ?? 0,
+    ebayFlatFeeAmount:    (json['ebayFlatFeeAmount'] as num?)?.toDouble() ?? 0,
     ebayFeeAmount:        (json['ebayFeeAmount'] as num?)?.toDouble(),
     soldAt:               json['soldAt'] != null ? DateTime.parse(json['soldAt']) : null,
     createdAt:            json['createdAt'] != null

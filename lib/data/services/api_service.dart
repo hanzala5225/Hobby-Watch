@@ -228,11 +228,12 @@ class ApiService extends GetxService {
   }
 
   Future<CardModel> markAsSold(String id, double soldPrice,
-      {bool soldOutsideEbay = false, double shippingCharge = 0}) async {
+      {bool soldOutsideEbay = false, double shippingCharge = 0, double taxCharged = 0}) async {
     final res = await _dio.post('/cards/$id/sold', data: {
       'soldPrice': soldPrice,
       'soldOutsideEbay': soldOutsideEbay,
       'shippingCharge': shippingCharge,
+      'taxCharged': taxCharged,
     });
     return CardModel.fromJson(res.data['data'] ?? res.data);
   }
