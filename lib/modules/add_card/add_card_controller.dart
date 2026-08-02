@@ -127,6 +127,17 @@ class AddCardController extends GetxController {
     if (currentStep.value > 0) currentStep.value--;
   }
 
+  // Used by the AppBar's top-left back icon. On step 2 (Pricing) this should
+  // step back to step 1 (Verify Details) instead of popping the route
+  // straight to the previous screen — only pop when already on step 1.
+  void handleBack() {
+    if (currentStep.value > 0) {
+      prevStep();
+    } else {
+      Get.back();
+    }
+  }
+
   Future<void> saveCard() async {
     final priceText = purchasePriceController.text.trim();
     if (priceText.isEmpty || double.tryParse(priceText) == null) {

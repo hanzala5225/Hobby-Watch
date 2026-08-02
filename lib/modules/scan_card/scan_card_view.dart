@@ -41,8 +41,8 @@ class _ChooseStep extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(8.w, 8.h, 20.w, 0),
               child: Row(children: [
                 IconButton(
-                  icon: Icon(Icons.close, color: AppColors.textSecondary, size: 22.sp),
-                  onPressed: Get.back,
+                  icon: Icon(Icons.arrow_back_ios_new, color: AppColors.textSecondary, size: 20.sp),
+                  onPressed: c.goBack,
                 ),
                 Text('Add Card',
                     style: GoogleFonts.inter(fontSize: 18.sp, fontWeight: FontWeight.w700, color: AppColors.primary)),
@@ -153,6 +153,74 @@ class _OptionButton extends StatelessWidget {
           const Spacer(),
           Icon(Icons.arrow_forward_ios_rounded, size: 14.sp, color: isPrimary ? Colors.white60 : AppColors.textMuted),
         ]),
+      ),
+    );
+  }
+}
+
+class _AnimatedScannerButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _AnimatedScannerButton({required this.onTap});
+  @override
+  State<_AnimatedScannerButton> createState() => _AnimatedScannerButtonState();
+}
+
+class _AnimatedScannerButtonState extends State<_AnimatedScannerButton> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: 16.h),
+        child: AnimatedBuilder(
+          animation: _ctrl,
+          builder: (context, child) {
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(1.4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14.r),
+                gradient: SweepGradient(
+                  transform: GradientRotation(_ctrl.value * 6.28319),
+                  colors: [
+                    AppColors.primary.withOpacity(0.25),
+                    AppColors.accent,
+                    AppColors.primary,
+                    AppColors.primary.withOpacity(0.25),
+                  ],
+                  stops: const [0.0, 0.35, 0.7, 1.0],
+                ),
+              ),
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 13.h),
+                decoration: BoxDecoration(
+                  color: AppColors.bgCard,
+                  borderRadius: BorderRadius.circular(13.r),
+                ),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(Icons.document_scanner_outlined, color: AppColors.primary, size: 18.sp),
+                  SizedBox(width: 8.w),
+                  Text('Try our Graded Card Scanner (beta)',
+                      style: GoogleFonts.inter(fontSize: 13.sp, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                ]),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -935,6 +1003,7 @@ class _ConfirmStep extends StatelessWidget {
         Icon(icon, color: AppColors.textMuted, size: 16.sp),
         SizedBox(width: 10.w),
         SizedBox(width: 80.w, child: Text(label, style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textMuted))),
+        SizedBox(width: 10.w),
         Expanded(
           child: TextFormField(
             controller: ctrl,
@@ -977,25 +1046,7 @@ class _VerifyStep extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // "Try our Graded Card Scanner" — opens camera/gallery scan flow
-            GestureDetector(
-              onTap: c.openGradedScanner,
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 13.h),
-                margin: EdgeInsets.only(bottom: 16.h),
-                decoration: BoxDecoration(
-                  color: AppColors.bgCard,
-                  borderRadius: BorderRadius.circular(14.r),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.35)),
-                ),
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.document_scanner_outlined, color: AppColors.primary, size: 18.sp),
-                  SizedBox(width: 8.w),
-                  Text('Try our Graded Card Scanner (beta)',
-                      style: GoogleFonts.inter(fontSize: 13.sp, fontWeight: FontWeight.w600, color: AppColors.primary)),
-                ]),
-              ),
-            ),
+            _AnimatedScannerButton(onTap: c.openGradedScanner),
 
             // Info / error banner
             Obx(() {
@@ -1135,6 +1186,7 @@ class _VerifyStep extends StatelessWidget {
       Icon(icon, color: AppColors.textMuted, size: 17.sp),
       SizedBox(width: 10.w),
       SizedBox(width: 80.w, child: Text(label, style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textMuted))),
+      SizedBox(width: 10.w),
       Expanded(
         child: TextFormField(
           controller: ctrl,

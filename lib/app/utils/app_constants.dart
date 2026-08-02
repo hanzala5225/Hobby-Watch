@@ -3,7 +3,7 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // ── API BASE URL ──────────────────────────────────────────────────────────
-  static const String baseUrl = 'https://hobby-watch-apis.onrender.com/api';
+  static const String baseUrl = 'https://api.thehobbywatch.com/api';
 
   // ── Storage keys ──────────────────────────────────────────────────────────
   static const String keyAccessToken  = 'access_token';

@@ -193,7 +193,7 @@ class ScanCardController extends GetxController {
   }
 
   void confirmAndAddCard() {
-    Get.offNamed(AppRoutes.addCard, arguments: {
+    Get.toNamed(AppRoutes.addCard, arguments: {   // was Get.offNamed
       'fromScan':    true,
       'playerName':  playerNameController.text,
       'year':        yearController.text,
@@ -209,7 +209,7 @@ class ScanCardController extends GetxController {
   }
 
   void goManualAdd() {
-    Get.offNamed(AppRoutes.addCard, arguments: {
+    Get.toNamed(AppRoutes.addCard, arguments: {   // was Get.offNamed
       'fromScan':    false,
       'playerName':  playerNameController.text,
       'year':        yearController.text,

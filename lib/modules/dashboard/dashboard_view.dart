@@ -539,7 +539,7 @@ class DashboardView extends GetView<DashboardController> {
                   SizedBox(height: 20.h),
 
                   // Version footer
-                  Center(child: Text('Hobby Watch v1.0.07',
+                  Center(child: Text('Hobby Watch v1.0.08',
                       style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted))),
                   SizedBox(height: 4.h),
                   Center(child: Text('Sports card profit tracking',
