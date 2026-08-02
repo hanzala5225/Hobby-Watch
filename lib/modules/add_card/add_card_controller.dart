@@ -51,11 +51,11 @@ class AddCardController extends GetxController {
       _ebayAvgPrice             = args['ebayAvgPrice']?.toString();
       _imageUrl                 = args['imageUrl'];
 
-      // If a scan already supplied a search query, treat it as user-provided —
-      // don't let the auto-fill below silently replace it.
-      if (ebaySearchController.text.trim().isNotEmpty) {
-        _userEditedSearchQuery = true;
-      }
+      // Carry forward whether the PREVIOUS screen's query was actually
+      // typed by the user, rather than guessing from non-emptiness — an
+      // OCR/auto-composed query is also non-empty, and treating that as
+      // "user edited" was silently killing live auto-fill on this screen.
+      _userEditedSearchQuery = args['searchQueryUserEdited'] == true;
     }
 
     // Live auto-fill: whenever any of the card-identity fields change,

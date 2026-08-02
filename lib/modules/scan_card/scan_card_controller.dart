@@ -218,7 +218,11 @@ class ScanCardController extends GetxController with WidgetsBindingObserver {
   // retry/edit a search from the Results screen's search bar.
   Future<void> retrySearch() async {
     final q = searchQueryController.text.trim();
-    if (q.isEmpty) return;
+    if (q.isEmpty) {
+      Get.snackbar('Nothing to Search', 'Enter at least the player name before searching eBay.',
+          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16), borderRadius: 12);
+      return;
+    }
     isProcessing.value = true;
     currentStep.value = ScanStep.processing;
     await _searchEbay(q);
@@ -242,6 +246,7 @@ class ScanCardController extends GetxController with WidgetsBindingObserver {
       'cardName':    selectedResult.value?.title ?? '',
       'ebayAvgPrice':searchResponse.value?.avg30Day ?? selectedResult.value?.price ?? 0.0,
       'searchQuery': searchQueryController.text,
+      'searchQueryUserEdited': _userEditedQuery,
       'imageUrl':    selectedResult.value?.imageUrl,
     });
   }
@@ -256,6 +261,7 @@ class ScanCardController extends GetxController with WidgetsBindingObserver {
       'cardNumber':  cardNumberController.text,
       'grade':       gradeController.text,
       'searchQuery': searchQueryController.text,
+      'searchQueryUserEdited': _userEditedQuery,
     });
   }
 
