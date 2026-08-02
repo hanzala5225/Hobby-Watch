@@ -56,11 +56,6 @@ class ApiService extends GetxService {
             } catch (_) {}
           }
 
-          // Only force logout when the refresh token itself was genuinely
-          // rejected (expired/invalid). A network failure, timeout, or the
-          // backend still waking up from sleep (e.g. Render free tier) is
-          // NOT proof the session is invalid — don't wipe the saved login
-          // over a transient connectivity problem.
           if (refreshResult == _RefreshResult.authInvalid) {
             final prefs = await SharedPreferences.getInstance();
             await prefs.remove(AppConstants.keyAccessToken);

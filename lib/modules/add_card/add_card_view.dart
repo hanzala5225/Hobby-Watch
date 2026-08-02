@@ -15,7 +15,7 @@ class AddCardView extends GetView<AddCardController> {
       appBar: AppBar(
         backgroundColor: AppColors.bgDark,
         title: Text('Add Card', style: GoogleFonts.inter(fontSize: 18.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-        leading: IconButton(icon: const Icon(Icons.close, color: AppColors.textPrimary), onPressed: Get.back),
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary), onPressed: Get.back),
       ),
       body: SafeArea(
         child: Column(
@@ -105,7 +105,7 @@ class AddCardView extends GetView<AddCardController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(height: 16.h),
-        Text('Card Details', style: GoogleFonts.inter(fontSize: 24.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        Text('Verify Details', style: GoogleFonts.inter(fontSize: 24.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         SizedBox(height: 6.h),
         Text('Enter basic card information', style: GoogleFonts.inter(fontSize: 14.sp, color: AppColors.textSecondary)),
         SizedBox(height: 28.h),

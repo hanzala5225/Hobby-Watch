@@ -20,7 +20,6 @@ class ScanCardView extends GetView<ScanCardController> {
         case ScanStep.verify:     return _VerifyStep(c: controller);
         case ScanStep.results:    return _ResultsStep(c: controller);
         case ScanStep.confirm:    return _ConfirmStep(c: controller);
-        case ScanStep.manual:     return _ManualStep(c: controller);
       }
     });
   }
@@ -65,7 +64,7 @@ class _ChooseStep extends StatelessWidget {
                       child: Icon(Icons.add_a_photo_rounded, color: Colors.white, size: 40.sp),
                     ),
                     SizedBox(height: 28.h),
-                    Text('Add a card to your collection',
+                    Text('Add a graded card to your collection',
                         style: GoogleFonts.inter(fontSize: 18.sp, fontWeight: FontWeight.w700, color: AppColors.primary),
                         textAlign: TextAlign.center),
                     SizedBox(height: 8.h),
@@ -104,22 +103,6 @@ class _ChooseStep extends StatelessWidget {
                     SizedBox(height: 12.h),
                     _OptionButton(icon: Icons.photo_library_outlined, label: 'Choose from Gallery',
                         subtitle: 'Pick an existing photo', isPrimary: false, onTap: c.pickFromGallery),
-                    SizedBox(height: 12.h),
-                    GestureDetector(
-                      onTap: c.enterManually,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10.h),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.edit_outlined, color: AppColors.textMuted, size: 16.sp),
-                            SizedBox(width: 8.w),
-                            Text('Enter card details manually',
-                                style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textSecondary)),
-                          ],
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -365,7 +348,7 @@ class _ResultsStep extends StatelessWidget {
             final res = c.searchResponse.value;
             final err = c.errorMessage.value;
             if (err.isNotEmpty) {
-                return Padding(
+              return Padding(
                 padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 0),
                 child: Text(err, style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.loss)),
               );
@@ -970,153 +953,6 @@ class _ConfirmStep extends StatelessWidget {
   }
 }
 
-// ── STEP: Manual Entry ───────────────────────────────────────────────────────
-class _ManualStep extends StatelessWidget {
-  final ScanCardController c;
-  const _ManualStep({required this.c});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bgDark,
-      appBar: AppBar(
-        backgroundColor: AppColors.bgDark,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: AppColors.primary, size: 20.sp),
-          onPressed: c.goBack,
-        ),
-        title: Text('Add Card Manually',
-            style: GoogleFonts.inter(fontSize: 18.sp, fontWeight: FontWeight.w700, color: AppColors.primary)),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Info banner
-            Container(
-              padding: EdgeInsets.all(14.w),
-              decoration: BoxDecoration(
-                color: AppColors.accent.withOpacity(0.07),
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.accent.withOpacity(0.2)),
-              ),
-              child: Row(children: [
-                Icon(Icons.edit_note_rounded, color: AppColors.accent, size: 20.sp),
-                SizedBox(width: 10.w),
-                Expanded(child: Text(
-                  'Fill in what you know. The more detail you add, the better the eBay price estimate.',
-                  style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary, height: 1.4),
-                )),
-              ]),
-            ),
-
-            SizedBox(height: 24.h),
-
-            _sectionLabel('Card Identity'),
-            SizedBox(height: 10.h),
-
-            Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: AppColors.bgCard,
-                borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(children: [
-                _field('Player Name', c.playerNameController, Icons.person_outline_rounded, 'e.g. Michael Jordan', TextInputType.text),
-                Divider(color: AppColors.divider, height: 20.h),
-                _field('Year', c.yearController, Icons.calendar_today_outlined, 'e.g. 1996', TextInputType.number),
-                Divider(color: AppColors.divider, height: 20.h),
-                _field('Brand / Set', c.setNameController, Icons.layers_outlined, 'e.g. Topps Chrome', TextInputType.text),
-              ]),
-            ),
-
-            SizedBox(height: 32.h),
-
-            // Two options: search eBay or go straight to add
-            Text('What would you like to do next?',
-                style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-            SizedBox(height: 12.h),
-
-            // Search eBay button — routes through Verify first, so the user
-            // can also add Parallel/Card #/Grade (this screen doesn't capture
-            // them) before the search actually fires.
-            GestureDetector(
-              onTap: c.goToVerify,
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 15.h),
-                decoration: BoxDecoration(
-                  gradient: AppColors.heroGradient,
-                  borderRadius: BorderRadius.circular(14.r),
-                  boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 14, offset: const Offset(0, 5))],
-                ),
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.fact_check_outlined, color: Colors.white, size: 20.sp),
-                  SizedBox(width: 10.w),
-                  Text('Continue to Verify Details',
-                      style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: Colors.white)),
-                ]),
-              ),
-            ),
-
-            SizedBox(height: 12.h),
-
-            // Skip straight to add
-            GestureDetector(
-              onTap: c.goManualAdd,
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 15.h),
-                decoration: BoxDecoration(
-                  color: AppColors.bgCard,
-                  borderRadius: BorderRadius.circular(14.r),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 20.sp),
-                  SizedBox(width: 10.w),
-                  Text('Skip search — set price manually',
-                      style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.primary)),
-                ]),
-              ),
-            ),
-
-            SizedBox(height: 40.h),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _sectionLabel(String text) => Text(text,
-      style: GoogleFonts.inter(fontSize: 11.sp, fontWeight: FontWeight.w700,
-          color: AppColors.textMuted, letterSpacing: 0.8));
-
-  Widget _field(String label, TextEditingController ctrl, IconData icon, String hint, TextInputType type) {
-    return Row(children: [
-      Icon(icon, color: AppColors.textMuted, size: 17.sp),
-      SizedBox(width: 10.w),
-      SizedBox(width: 80.w, child: Text(label, style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textMuted))),
-      Expanded(
-        child: TextFormField(
-          controller: ctrl,
-          keyboardType: type,
-          style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.border),
-            border: InputBorder.none, enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none, filled: false,
-            isCollapsed: true, contentPadding: EdgeInsets.zero,
-          ),
-        ),
-      ),
-    ]);
-  }
-}
-
 // ── STEP: Verify Details (shown before every eBay search) ──────────────────
 class _VerifyStep extends StatelessWidget {
   final ScanCardController c;
@@ -1132,7 +968,7 @@ class _VerifyStep extends StatelessWidget {
           icon: Icon(Icons.arrow_back_ios_new, color: AppColors.primary, size: 20.sp),
           onPressed: c.goBack,
         ),
-        title: Text('Verify Details',
+        title: Text('Add Card',
             style: GoogleFonts.inter(fontSize: 18.sp, fontWeight: FontWeight.w700, color: AppColors.primary)),
       ),
       body: SingleChildScrollView(
@@ -1140,6 +976,27 @@ class _VerifyStep extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // "Try our Graded Card Scanner" — opens camera/gallery scan flow
+            GestureDetector(
+              onTap: c.openGradedScanner,
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 13.h),
+                margin: EdgeInsets.only(bottom: 16.h),
+                decoration: BoxDecoration(
+                  color: AppColors.bgCard,
+                  borderRadius: BorderRadius.circular(14.r),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.35)),
+                ),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(Icons.document_scanner_outlined, color: AppColors.primary, size: 18.sp),
+                  SizedBox(width: 8.w),
+                  Text('Try our Graded Card Scanner (beta)',
+                      style: GoogleFonts.inter(fontSize: 13.sp, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                ]),
+              ),
+            ),
+
             // Info / error banner
             Obx(() {
               final err = c.errorMessage.value;

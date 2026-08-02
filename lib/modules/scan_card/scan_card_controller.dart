@@ -8,14 +8,17 @@ import '../../data/services/ocr_service.dart';
 import '../routes/app_routes.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-enum ScanStep { choose, processing, verify, results, confirm, manual }
+enum ScanStep { choose, processing, verify, results, confirm }
 
 class ScanCardController extends GetxController {
   final _ocr  = Get.find<OcrService>();
   final _api  = Get.find<ApiService>();
   final _picker = ImagePicker();
 
-  final currentStep       = ScanStep.choose.obs;
+  // "Add Card" (the old Verify Details screen) is now the true entry point —
+  // tapping Add Card lands here directly, with the camera/gallery scanner
+  // reachable only via the "Try our Graded Card Scanner (beta)" button.
+  final currentStep       = ScanStep.verify.obs;
   final isProcessing      = false.obs;
   final errorMessage      = ''.obs;
   final scannedImageFile  = Rx<File?>(null);
@@ -32,9 +35,6 @@ class ScanCardController extends GetxController {
   final parallelController    = TextEditingController();
   final cardNumberController  = TextEditingController();
   final gradeController       = TextEditingController();
-
-  // Manual entry fallback
-  final isManualMode = false.obs;
 
   // Tracks whether the user has manually typed their own eBay search query on
   // the Verify screen. Once true, we stop overwriting it as the fields above
@@ -129,18 +129,11 @@ class ScanCardController extends GetxController {
     }
   }
 
-  void enterManually() {
-    isManualMode.value = true;
-    // Clear any previous scan data
-    playerNameController.clear();
-    yearController.clear();
-    setNameController.clear();
-    parallelController.clear();
-    cardNumberController.clear();
-    gradeController.clear();
-    searchQueryController.clear();
-    _userEditedQuery = false;
-    currentStep.value = ScanStep.manual;
+  // Opens the camera/gallery scanner from the "Add Card" screen's new
+  // "Try our Graded Card Scanner (beta)" button. Whatever the user has
+  // already typed manually is left untouched unless a scan actually completes.
+  void openGradedScanner() {
+    currentStep.value = ScanStep.choose;
   }
 
   Future<void> _processImage(File f) async {
@@ -168,19 +161,6 @@ class ScanCardController extends GetxController {
     } finally {
       isProcessing.value = false;
     }
-  }
-
-  // Called from the 3-field manual entry screen's "Search eBay" button —
-  // routes through Verify too, so the user can add Parallel/Card #/Grade
-  // (which that screen doesn't capture) before the search actually fires.
-  void goToVerify() {
-    if (playerNameController.text.trim().isEmpty) {
-      Get.snackbar('Fill in details', 'Add at least a player name to search.',
-          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16), borderRadius: 12);
-      return;
-    }
-    _composeQuery();
-    currentStep.value = ScanStep.verify;
   }
 
   Future<void> _searchEbay(String query) async {
@@ -243,12 +223,9 @@ class ScanCardController extends GetxController {
 
   void goBack() {
     switch (currentStep.value) {
-      case ScanStep.manual:
-        currentStep.value = ScanStep.choose;
-        isManualMode.value = false;
-        break;
-      case ScanStep.verify:
-        currentStep.value = isManualMode.value ? ScanStep.manual : ScanStep.choose;
+      case ScanStep.choose:
+      // Came here from "Add Card" via the Graded Card Scanner button.
+        currentStep.value = ScanStep.verify;
         break;
       case ScanStep.results:
         currentStep.value = ScanStep.verify;
@@ -257,6 +234,8 @@ class ScanCardController extends GetxController {
         currentStep.value = ScanStep.results;
         break;
       default:
+      // ScanStep.verify ("Add Card") is now the entry point — back exits
+      // the whole flow, same as ScanStep.processing falling through here.
         Get.back();
     }
   }
