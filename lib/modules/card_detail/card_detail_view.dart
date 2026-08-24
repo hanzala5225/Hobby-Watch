@@ -17,9 +17,17 @@ class CardDetailView extends GetView<CardDetailController> {
       backgroundColor: AppColors.bgDark,
       body: Obx(() {
         final card = controller.card.value;
-        final margin = card.currentMarginPercent ?? 0;
-        final isProfit = margin >= 0;
         final isSold = card.isSold;
+        // For a sold card, "Margin (after fees)" must reflect the ACTUAL
+        // sale (profitDollar / purchasePrice) — not currentMarginPercent,
+        // which is a pre-sale estimate based on the last-refreshed market
+        // price and has nothing to do with what the card actually sold for.
+        // Using it here was showing a completely different number than the
+        // Profit/Loss box right next to it, computed from unrelated data.
+        final margin = isSold
+            ? (card.purchasePrice > 0 ? ((card.profitDollar ?? 0) / card.purchasePrice) * 100 : 0.0)
+            : (card.currentMarginPercent ?? 0);
+        final isProfit = margin >= 0;
 
         return CustomScrollView(
           slivers: [

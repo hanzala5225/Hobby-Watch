@@ -213,10 +213,13 @@ class _SoldCardTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final soldPrice = card.soldPrice ?? 0;
-    final combined = soldPrice + card.shippingCharge;
-    final feePercent = card.soldOutsideEbay ? 0.0 : card.ebayFeePercent;
-    final afterFees = combined * (1 - feePercent / 100);
-    final profit = afterFees - card.purchasePrice;
+    // Use the backend's authoritative profitDollar (already correctly
+    // includes tax + eBay's flat per-order fee) rather than recomputing
+    // fees here — this local formula predated the tax/flat-fee work and was
+    // silently missing both, which is why this screen could show a
+    // different profit than Card Detail for the same sale.
+    final profit = card.profitDollar ?? 0;
+    final afterFees = card.purchasePrice + profit;
     final marginPct = card.purchasePrice > 0 ? (profit / card.purchasePrice) * 100 : 0.0;
     final isProfit = profit >= 0;
 
