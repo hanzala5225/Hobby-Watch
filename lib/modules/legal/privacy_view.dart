@@ -31,7 +31,7 @@ class PrivacyView extends StatelessWidget {
             _section('3. Data Storage and Security'),
             _body('Your data is stored securely on cloud servers. We use industry-standard encryption for data in transit (HTTPS/TLS) and at rest. Passwords are hashed using bcrypt and are never stored in plain text. We do not sell your personal information to third parties.'),
             _section('4. Third-Party Services'),
-            _body('The App uses the following third-party services:\n\n• eBay API: to fetch current market pricing data (no personal data is shared)\n• Firebase Cloud Messaging: to deliver push notifications to your device\n• Supabase (PostgreSQL): for secure database storage\n• Railway: for backend hosting infrastructure'),
+            _body('The App uses the following third-party services:\n\n• SoldComps: to fetch recent eBay sold-listing pricing data (no personal data is shared — only card search terms)\n• Firebase Cloud Messaging: to deliver push notifications to your device\n• Supabase (PostgreSQL): for secure database storage\n• Railway: for backend hosting infrastructure'),
             _section('5. Data Retention'),
             _body('We retain your data for as long as your account is active. When you delete your account, we will permanently delete all your personal data within 24 hours of the deletion request being confirmed. Some anonymized usage statistics may be retained for analytics purposes.'),
             _section('6. Push Notifications'),

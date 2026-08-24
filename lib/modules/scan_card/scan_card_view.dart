@@ -430,10 +430,10 @@ class _ResultsStep extends StatelessWidget {
                 child: Row(children: [
                   Icon(Icons.price_check_rounded, color: AppColors.accent, size: 18.sp),
                   SizedBox(width: 8.w),
-                  Text('Est. Market: ', style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textSecondary)),
+                  Text('Sold Avg: ', style: GoogleFonts.inter(fontSize: 13.sp, color: AppColors.textSecondary)),
                   Text(fmt.format(res.avg30Day), style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.accent)),
                   SizedBox(width: 6.w),
-                  Expanded(child: Text('from ${res.totalResults} active listings',
+                  Expanded(child: Text('from ${res.totalResults} recent sold listings',
                       style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textMuted), overflow: TextOverflow.ellipsis)),
                 ]),
               ),
@@ -700,7 +700,7 @@ class _CardDetailSheet extends StatelessWidget {
                               Icon(Icons.info_outline_rounded, color: AppColors.textMuted, size: 15.sp),
                               SizedBox(width: 8.w),
                               Expanded(child: Text(
-                                'Price from active eBay listing — not a sold price. Estimated market value based on current supply.',
+                                'Price based on real recent eBay sold listings — Best-Offer sales excluded since eBay doesn\'t disclose the actual accepted price on those.',
                                 style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted, height: 1.5),
                               )),
                             ]),

@@ -145,15 +145,16 @@ class CardDetailView extends GetView<CardDetailController> {
                     ]),
 
                     // Small honest caption instead of a duplicate price block —
-                    // "Market Price" above is already the same number eBay's
-                    // API gives us; this just clarifies what it actually is.
+                    // "Market Price" above is the real sold-price average from
+                    // SoldComps (recent completed eBay sales), not a live asking
+                    // price — this clarifies what it actually is.
                     if (!isSold && card.currentEbayAvg30 != null) ...[
                       SizedBox(height: 8.h),
                       Row(children: [
                         Icon(Icons.info_outline_rounded, color: AppColors.textMuted, size: 12.sp),
                         SizedBox(width: 5.w),
                         Expanded(child: Text(
-                          'Market Price reflects active eBay listings right now, not a historical average.',
+                          'Market Price reflects recent real sold listings, not current asking prices.',
                           style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textMuted),
                         )),
                       ]),
