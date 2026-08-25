@@ -173,7 +173,7 @@ class ApiService extends GetxService {
 
   // ─── Cards ────────────────────────────────────────────────────────────────
 
-  Future<({List<CardModel> cards, PortfolioSummary summary})> getCards({
+  Future<({List<CardModel> cards, PortfolioSummary summary, int totalCount})> getCards({
     int page = 1,
     int pageSize = 50,
     String? search,
@@ -193,8 +193,9 @@ class ApiService extends GetxService {
         .map((e) => CardModel.fromJson(e))
         .toList();
     final summary = PortfolioSummary.fromJson(data['summary'] ?? {});
+    final totalCount = (data['totalCount'] as num?)?.toInt() ?? cards.length;
 
-    return (cards: cards, summary: summary);
+    return (cards: cards, summary: summary, totalCount: totalCount);
   }
 
   Future<CardModel> addCard(Map<String, dynamic> data) async {

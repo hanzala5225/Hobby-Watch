@@ -106,10 +106,21 @@ class CollectionView extends GetView<CollectionController> {
                 color: AppColors.accent,
                 onRefresh: controller.loadCards,
                 child: ListView.separated(
+                  controller: controller.scrollController,
                   padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 100.h),
-                  itemCount: cards.length,
+                  itemCount: cards.length + (controller.isLoadingMore.value ? 1 : 0),
                   separatorBuilder: (_, __) => SizedBox(height: 10.h),
-                  itemBuilder: (_, i) => _CollectionCardTile(card: cards[i], onDelete: () => controller.deleteCard(cards[i].id), fmt: fmt),
+                  itemBuilder: (_, i) {
+                    if (i >= cards.length) {
+                      return Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16.h),
+                        child: const Center(
+                          child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2),
+                        ),
+                      );
+                    }
+                    return _CollectionCardTile(card: cards[i], onDelete: () => controller.deleteCard(cards[i].id), fmt: fmt);
+                  },
                 ),
               );
             }),
@@ -122,7 +133,7 @@ class CollectionView extends GetView<CollectionController> {
   Widget _filterChip(String label, String value) {
     final isActive = controller.filterMode.value == value;
     return GestureDetector(
-      onTap: () => controller.filterMode.value = value,
+      onTap: () => controller.setFilterMode(value),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
         decoration: BoxDecoration(
