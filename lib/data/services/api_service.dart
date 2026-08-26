@@ -13,6 +13,27 @@ class ApiService extends GetxService {
   late final Dio _dio;
   final _log = Logger();
 
+  // Bug fix (2026-08-25): concurrent 401s (e.g. all 4 of dashboard's onInit
+  // requests hitting an expired token at once) used to each independently
+  // call _tryRefreshToken(). Since refresh tokens rotate on use, the first
+  // succeeded and invalidated the token the others were still using — so
+  // those others independently decided the session was dead and EACH called
+  // Get.offAllNamed('/login') within milliseconds of each other, colliding
+  // on the same LoginController's Form GlobalKey mid-build (the "Multiple
+  // widgets used the same GlobalKey" crash Hanzala hit, and very likely the
+  // same "randomly on the login screen" reports from Tim/Brent). Fix: make
+  // refresh single-flight — concurrent callers await the one in-flight
+  // refresh instead of each starting their own.
+  Future<_RefreshResult>? _inFlightRefresh;
+
+  // Same race, second half: even with the refresh call itself de-duplicated
+  // above, if that ONE shared refresh attempt fails, every concurrent caller
+  // still resumes at ~the same moment and would each independently run the
+  // logout+redirect block below. This flag ensures only the first one
+  // actually clears storage and navigates; the rest are already headed to
+  // /login by then and can just stop.
+  bool _loggingOutFromExpiredSession = false;
+
   @override
   void onInit() {
     super.onInit();
@@ -44,8 +65,12 @@ class ApiService extends GetxService {
             return handler.next(e);
           }
 
-          // Try silent token refresh
-          final refreshResult = await _tryRefreshToken();
+          // Try silent token refresh — single-flight: if a refresh is already
+          // in progress (from another concurrent 401), await that SAME
+          // attempt instead of starting a new one. See _inFlightRefresh docs.
+          final refreshResult = await (_inFlightRefresh ??= _tryRefreshToken().whenComplete(() {
+            _inFlightRefresh = null;
+          }));
           if (refreshResult == _RefreshResult.success) {
             final prefs = await SharedPreferences.getInstance();
             final newToken = prefs.getString(AppConstants.keyAccessToken);
@@ -56,12 +81,17 @@ class ApiService extends GetxService {
             } catch (_) {}
           }
 
-          if (refreshResult == _RefreshResult.authInvalid) {
+          if (refreshResult == _RefreshResult.authInvalid && !_loggingOutFromExpiredSession) {
+            _loggingOutFromExpiredSession = true;
             final prefs = await SharedPreferences.getInstance();
             await prefs.remove(AppConstants.keyAccessToken);
             await prefs.remove(AppConstants.keyRefreshToken);
             await prefs.remove(AppConstants.keyUser);
             Get.offAllNamed('/login');
+            // Reset shortly after — not immediately, so any other 401s still
+            // resolving in this same batch see the flag and skip, rather than
+            // sneaking in a second navigation a few milliseconds later.
+            Future.delayed(const Duration(seconds: 2), () => _loggingOutFromExpiredSession = false);
           }
         }
         return handler.next(e);

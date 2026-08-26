@@ -213,38 +213,53 @@ class DashboardView extends GetView<DashboardController> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18.r),
             color: AppColors.bgCard,
-            border: Border.all(color: Colors.white.withOpacity(0.06)),
+            // Bug fix (2026-08): this card is WHITE (AppColors.bgCard), but
+            // every text/border color below was copied from the dark hero
+            // section above it — white-on-white, effectively invisible.
+            // Swapped to the app's actual light-card palette (textPrimary/
+            // textSecondary/textMuted/border/profit/loss), matching how
+            // "Ready to Sell" and "My Collection" already render correctly.
+            border: Border.all(color: AppColors.border),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('Activity', style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: Colors.white)),
-              Row(children: [
-                _rangeChip('YTD', 'ytd', range),
+            Text('Activity this period', style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+            SizedBox(height: 3.h),
+            Text('Cards you bought and sold in the selected time range.',
+                style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textSecondary)),
+            SizedBox(height: 12.h),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: [
+                _rangeChip('Year to Date', 'ytd', range),
                 SizedBox(width: 6.w),
-                _rangeChip('Month', 'month', range),
+                _rangeChip('This Month', 'month', range),
                 SizedBox(width: 6.w),
-                _rangeChip('Quarter', 'quarter', range),
+                _rangeChip('This Quarter', 'quarter', range),
                 SizedBox(width: 6.w),
-                _rangeChip('Year', 'year', range),
+                _rangeChip('This Year', 'year', range),
               ]),
-            ]),
+            ),
             SizedBox(height: 14.h),
             if (controller.isLoadingActivity.value)
               Padding(
                 padding: EdgeInsets.symmetric(vertical: 10.h),
                 child: const Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2)),
               )
-            else if (a == null)
-              Text('No data for this range.', style: GoogleFonts.inter(fontSize: 12.sp, color: Colors.white38))
+            else if (a == null || (a.cardsAdded == 0 && a.cardsSold == 0))
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 4.h),
+                child: Text('No cards bought or sold in this period yet.',
+                    style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textMuted)),
+              )
             else
               Row(children: [
                 Expanded(child: _activityStat('Invested', fmt.format(a.totalInvestedInPeriod), '${a.cardsAdded} added')),
                 SizedBox(width: 10.w),
                 Expanded(child: _activityStat('Realized Profit', fmt.format(a.totalProfitInPeriod), '${a.cardsSold} sold',
-                    valueColor: a.totalProfitInPeriod >= 0 ? const Color(0xFF4CD6C5) : const Color(0xFFFF6B6B))),
+                    valueColor: a.totalProfitInPeriod >= 0 ? AppColors.profit : AppColors.loss)),
                 SizedBox(width: 10.w),
                 Expanded(child: _activityStat('ROI', a.roiPercentInPeriod != null ? '${a.roiPercentInPeriod!.toStringAsFixed(1)}%' : '—', 'on sold cards',
-                    valueColor: (a.roiPercentInPeriod ?? 0) >= 0 ? const Color(0xFF4CD6C5) : const Color(0xFFFF6B6B))),
+                    valueColor: (a.roiPercentInPeriod ?? 0) >= 0 ? AppColors.profit : AppColors.loss)),
               ]),
           ]),
         );
@@ -260,26 +275,26 @@ class DashboardView extends GetView<DashboardController> {
         padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10.r),
-          color: isActive ? AppColors.accent.withOpacity(0.25) : Colors.white.withOpacity(0.06),
+          color: isActive ? AppColors.accent.withOpacity(0.15) : AppColors.bgSurface,
         ),
         child: Text(label, style: GoogleFonts.inter(fontSize: 10.sp, fontWeight: FontWeight.w600,
-            color: isActive ? AppColors.accent : Colors.white60)),
+            color: isActive ? AppColors.accent : AppColors.textSecondary)),
       ),
     );
   }
 
   Widget _activityStat(String label, String value, String sublabel, {Color? valueColor}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: GoogleFonts.inter(fontSize: 10.sp, color: Colors.white60)),
+      Text(label, style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textSecondary)),
       SizedBox(height: 4.h),
       FittedBox(
         fit: BoxFit.scaleDown,
         alignment: Alignment.centerLeft,
         child: Text(value, maxLines: 1, style: GoogleFonts.inter(fontSize: 15.sp, fontWeight: FontWeight.w700,
-            color: valueColor ?? Colors.white)),
+            color: valueColor ?? AppColors.textPrimary)),
       ),
       SizedBox(height: 2.h),
-      Text(sublabel, style: GoogleFonts.inter(fontSize: 9.sp, color: Colors.white38)),
+      Text(sublabel, style: GoogleFonts.inter(fontSize: 9.sp, color: AppColors.textMuted)),
     ]);
   }
 
