@@ -18,7 +18,8 @@ class CardDetailView extends GetView<CardDetailController> {
       body: Obx(() {
         final card = controller.card.value;
         final isSold = card.isSold;
-        // For a sold card, "Margin (after fees)" must reflect the ACTUAL
+        // For a sold card, "ROI" (labeled "Margin (after fees)" until Tim
+        // clarified the terminology, 2026-08-25) must reflect the ACTUAL
         // sale (profitDollar / purchasePrice) — not currentMarginPercent,
         // which is a pre-sale estimate based on the last-refreshed market
         // price and has nothing to do with what the card actually sold for.
@@ -130,7 +131,7 @@ class CardDetailView extends GetView<CardDetailController> {
                     SizedBox(height: 10.h),
                     Row(children: [
                       Expanded(child: _PriceBox(
-                        label: 'Margin (after fees)',
+                        label: 'ROI',
                         value: '${isProfit ? "+" : ""}${margin.toStringAsFixed(1)}%',
                         color: card.isTargetReached ? AppColors.accent : isProfit ? AppColors.accent : AppColors.loss,
                       )),

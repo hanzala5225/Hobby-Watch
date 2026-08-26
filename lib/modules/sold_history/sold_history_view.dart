@@ -101,7 +101,7 @@ class SoldHistoryView extends GetView<SoldHistoryController> {
                             SizedBox(width: 8.w),
                             _statChip('Earned', fmt.format(controller.totalSoldFor)),
                             SizedBox(width: 8.w),
-                            _statChip('Avg Margin', '${margin >= 0 ? "+" : ""}${margin.toStringAsFixed(1)}%',
+                            _statChip('Avg ROI', '${margin >= 0 ? "+" : ""}${margin.toStringAsFixed(1)}%',
                                 highlight: margin >= 0),
                           ]),
                         ],
