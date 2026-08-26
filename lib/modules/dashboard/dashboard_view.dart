@@ -39,6 +39,8 @@ class DashboardView extends GetView<DashboardController> {
                   _buildAppBar(),
                   SliverToBoxAdapter(child: SizedBox(height: 16.h)),
                   SliverToBoxAdapter(child: _buildPortfolioHero()),
+                  SliverToBoxAdapter(child: SizedBox(height: 20.h)),
+                  SliverToBoxAdapter(child: _buildActivitySummary()),
                   SliverToBoxAdapter(child: SizedBox(height: 24.h)),
                   if (controller.targetReachedCards.isNotEmpty) ...[
                     SliverToBoxAdapter(child: _sectionHeader('🎯 Ready to Sell', controller.summary.value.cardsAtTarget,
@@ -136,6 +138,11 @@ class DashboardView extends GetView<DashboardController> {
                 ],
               ),
               SizedBox(height: 12.h),
+              // Small title above the badge, per Tim's request (2026-08-25) — the
+              // net-profit figure (portfolio value minus invested) already existed
+              // as this badge, just wasn't labeled.
+              Text('Net Profit', style: GoogleFonts.inter(fontSize: 11.sp, color: Colors.white60, fontWeight: FontWeight.w500)),
+              SizedBox(height: 4.h),
               Row(
                 children: [
                   Container(
@@ -188,6 +195,92 @@ class DashboardView extends GetView<DashboardController> {
         );
       }),
     );
+  }
+
+  // Date-range activity report (Tim's request, 2026-08-25) — cards
+  // added/sold within the selected range, not a historical portfolio-value
+  // snapshot (the app doesn't track that; see ActivitySummaryResponse).
+  Widget _buildActivitySummary() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      child: Obx(() {
+        final fmt = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+        final a = controller.activitySummary.value;
+        final range = controller.selectedRange.value;
+
+        return Container(
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18.r),
+            color: AppColors.bgCard,
+            border: Border.all(color: Colors.white.withOpacity(0.06)),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text('Activity', style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: Colors.white)),
+              Row(children: [
+                _rangeChip('YTD', 'ytd', range),
+                SizedBox(width: 6.w),
+                _rangeChip('Month', 'month', range),
+                SizedBox(width: 6.w),
+                _rangeChip('Quarter', 'quarter', range),
+                SizedBox(width: 6.w),
+                _rangeChip('Year', 'year', range),
+              ]),
+            ]),
+            SizedBox(height: 14.h),
+            if (controller.isLoadingActivity.value)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 10.h),
+                child: const Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2)),
+              )
+            else if (a == null)
+              Text('No data for this range.', style: GoogleFonts.inter(fontSize: 12.sp, color: Colors.white38))
+            else
+              Row(children: [
+                Expanded(child: _activityStat('Invested', fmt.format(a.totalInvestedInPeriod), '${a.cardsAdded} added')),
+                SizedBox(width: 10.w),
+                Expanded(child: _activityStat('Realized Profit', fmt.format(a.totalProfitInPeriod), '${a.cardsSold} sold',
+                    valueColor: a.totalProfitInPeriod >= 0 ? const Color(0xFF4CD6C5) : const Color(0xFFFF6B6B))),
+                SizedBox(width: 10.w),
+                Expanded(child: _activityStat('ROI', a.roiPercentInPeriod != null ? '${a.roiPercentInPeriod!.toStringAsFixed(1)}%' : '—', 'on sold cards',
+                    valueColor: (a.roiPercentInPeriod ?? 0) >= 0 ? const Color(0xFF4CD6C5) : const Color(0xFFFF6B6B))),
+              ]),
+          ]),
+        );
+      }),
+    );
+  }
+
+  Widget _rangeChip(String label, String value, String selected) {
+    final isActive = selected == value;
+    return GestureDetector(
+      onTap: () => controller.setRange(value),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10.r),
+          color: isActive ? AppColors.accent.withOpacity(0.25) : Colors.white.withOpacity(0.06),
+        ),
+        child: Text(label, style: GoogleFonts.inter(fontSize: 10.sp, fontWeight: FontWeight.w600,
+            color: isActive ? AppColors.accent : Colors.white60)),
+      ),
+    );
+  }
+
+  Widget _activityStat(String label, String value, String sublabel, {Color? valueColor}) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: GoogleFonts.inter(fontSize: 10.sp, color: Colors.white60)),
+      SizedBox(height: 4.h),
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(value, maxLines: 1, style: GoogleFonts.inter(fontSize: 15.sp, fontWeight: FontWeight.w700,
+            color: valueColor ?? Colors.white)),
+      ),
+      SizedBox(height: 2.h),
+      Text(sublabel, style: GoogleFonts.inter(fontSize: 9.sp, color: Colors.white38)),
+    ]);
   }
 
   Widget _miniStat(String label, String value, {bool highlight = false, VoidCallback? onTap}) {
