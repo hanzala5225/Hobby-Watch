@@ -160,12 +160,16 @@ class DashboardView extends GetView<DashboardController> {
               ),
               SizedBox(height: 16.h),
               Row(children: [
-                _miniStat('Invested', fmt.format(s.totalInvested)),
+                // Weighted (not equal) widths: "Invested" holds a formatted dollar
+                // amount and needs more room than the short plain numbers in "Cards"/
+                // "Alerts" — equal thirds was causing the value to wrap onto a second
+                // line instead of fitting (reported by Tim, 2026-08-12).
+                Flexible(flex: 3, child: _miniStat('Invested', fmt.format(s.totalInvested))),
                 SizedBox(width: 8.w),
-                _miniStat('Cards', '${s.totalCards}'),
+                Flexible(flex: 2, child: _miniStat('Cards', '${s.totalCards}')),
                 SizedBox(width: 8.w),
-                _miniStat('Alerts', '${s.cardsAtTarget}', highlight: s.cardsAtTarget > 0,
-                    onTap: () => Get.toNamed(AppRoutes.notifications)),
+                Flexible(flex: 2, child: _miniStat('Alerts', '${s.cardsAtTarget}', highlight: s.cardsAtTarget > 0,
+                    onTap: () => Get.toNamed(AppRoutes.notifications))),
               ]),
               if (controller.cardsAddedThisWeek > 0) ...[
                 SizedBox(height: 10.h),
@@ -187,23 +191,30 @@ class DashboardView extends GetView<DashboardController> {
   }
 
   Widget _miniStat(String label, String value, {bool highlight = false, VoidCallback? onTap}) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14.r),
-            color: highlight ? AppColors.accent.withOpacity(0.25) : Colors.white.withOpacity(0.12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(value, style: GoogleFonts.inter(fontSize: 15.sp, fontWeight: FontWeight.w700, color: Colors.white)),
-              SizedBox(height: 3.h),
-              Text(label, style: GoogleFonts.inter(fontSize: 10.sp, color: Colors.white60)),
-            ],
-          ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14.r),
+          color: highlight ? AppColors.accent.withOpacity(0.25) : Colors.white.withOpacity(0.12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // FittedBox+scaleDown instead of a plain Text: guarantees the value
+            // always stays on one line, shrinking font size for a longer dollar
+            // amount rather than wrapping (the bug Tim reported) — safe for any
+            // portfolio size, not just today's numbers.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(value, maxLines: 1,
+                  style: GoogleFonts.inter(fontSize: 15.sp, fontWeight: FontWeight.w700, color: Colors.white)),
+            ),
+            SizedBox(height: 3.h),
+            Text(label, style: GoogleFonts.inter(fontSize: 10.sp, color: Colors.white60)),
+          ],
         ),
       ),
     );

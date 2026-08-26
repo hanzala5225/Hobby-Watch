@@ -52,6 +52,22 @@ post_install do |installer|
       if Gem::Version.new($iOSVersion) > Gem::Version.new(config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'])
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = $iOSVersion
       end
+
+      # Bug fix (2026-08): camera permission was silently returning
+      # permanentlyDenied on iOS with NO Camera entry ever appearing in
+      # Settings, on every physical iPhone tested — despite a correct
+      # NSCameraUsageDescription in Info.plist and correct Dart-side
+      # request logic. Root cause: the permission_handler plugin ships
+      # with EVERY individual permission's native iOS implementation
+      # compiled out by default — it must be explicitly turned on per
+      # permission via this preprocessor macro, or the plugin's native
+      # code never calls Apple's real permission API at all, so iOS
+      # never registers a request and never creates a Settings entry.
+      # (Confirmed against a matching report on Apple's own developer
+      # forums: https://developer.apple.com/forums/thread/785784)
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'PERMISSION_CAMERA=1'
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'PERMISSION_PHOTOS=1'
     end
   end
 end

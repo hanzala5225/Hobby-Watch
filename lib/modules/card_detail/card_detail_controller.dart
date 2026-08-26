@@ -535,7 +535,16 @@ class MarkSoldDialog extends StatelessWidget {
                               // (ebay_flat_fee_threshold/low/high) when the sale is saved.
                               final flatFee = soldOutsideEbay.value ? 0.0 : (combined < 10 ? 0.30 : 0.40);
                               final feeAmount = percentFee + flatFee;
-                              final afterFees = combined - feeAmount;
+                              // Bug fix (Tim, 2026-08-12): "You Keep" was built from
+                              // `combined` (soldPrice+shipping+tax), so it rose dollar-
+                              // for-dollar with shipping/tax typed in. Shipping and tax
+                              // correctly grow the FEE (see above — eBay takes its cut
+                              // of the combined total), but they're pass-through money,
+                              // not something Tim actually keeps: shipping charged
+                              // covers his real postage cost, tax charged has to be
+                              // remitted. "You Keep" should reflect sold price only,
+                              // net of the (correctly larger) fee.
+                              final afterFees = soldPrice - feeAmount;
 
                               return Container(
                                 width: double.infinity,
