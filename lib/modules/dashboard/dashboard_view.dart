@@ -39,8 +39,6 @@ class DashboardView extends GetView<DashboardController> {
                   _buildAppBar(),
                   SliverToBoxAdapter(child: SizedBox(height: 16.h)),
                   SliverToBoxAdapter(child: _buildPortfolioHero()),
-                  SliverToBoxAdapter(child: SizedBox(height: 20.h)),
-                  SliverToBoxAdapter(child: _buildActivitySummary()),
                   SliverToBoxAdapter(child: SizedBox(height: 24.h)),
                   if (controller.targetReachedCards.isNotEmpty) ...[
                     SliverToBoxAdapter(child: _sectionHeader('🎯 Ready to Sell', controller.summary.value.cardsAtTarget,
@@ -195,107 +193,6 @@ class DashboardView extends GetView<DashboardController> {
         );
       }),
     );
-  }
-
-  // Date-range activity report (Tim's request, 2026-08-25) — cards
-  // added/sold within the selected range, not a historical portfolio-value
-  // snapshot (the app doesn't track that; see ActivitySummaryResponse).
-  Widget _buildActivitySummary() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Obx(() {
-        final fmt = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
-        final a = controller.activitySummary.value;
-        final range = controller.selectedRange.value;
-
-        return Container(
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18.r),
-            color: AppColors.bgCard,
-            // Bug fix (2026-08): this card is WHITE (AppColors.bgCard), but
-            // every text/border color below was copied from the dark hero
-            // section above it — white-on-white, effectively invisible.
-            // Swapped to the app's actual light-card palette (textPrimary/
-            // textSecondary/textMuted/border/profit/loss), matching how
-            // "Ready to Sell" and "My Collection" already render correctly.
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Activity this period', style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-            SizedBox(height: 3.h),
-            Text('Cards you bought and sold in the selected time range.',
-                style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textSecondary)),
-            SizedBox(height: 12.h),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(children: [
-                _rangeChip('Year to Date', 'ytd', range),
-                SizedBox(width: 6.w),
-                _rangeChip('This Month', 'month', range),
-                SizedBox(width: 6.w),
-                _rangeChip('This Quarter', 'quarter', range),
-                SizedBox(width: 6.w),
-                _rangeChip('This Year', 'year', range),
-              ]),
-            ),
-            SizedBox(height: 14.h),
-            if (controller.isLoadingActivity.value)
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 10.h),
-                child: const Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2)),
-              )
-            else if (a == null || (a.cardsAdded == 0 && a.cardsSold == 0))
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 4.h),
-                child: Text('No cards bought or sold in this period yet.',
-                    style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textMuted)),
-              )
-            else
-              Row(children: [
-                Expanded(child: _activityStat('Invested', fmt.format(a.totalInvestedInPeriod), '${a.cardsAdded} added')),
-                SizedBox(width: 10.w),
-                Expanded(child: _activityStat('Realized Profit', fmt.format(a.totalProfitInPeriod), '${a.cardsSold} sold',
-                    valueColor: a.totalProfitInPeriod >= 0 ? AppColors.profit : AppColors.loss)),
-                SizedBox(width: 10.w),
-                Expanded(child: _activityStat('ROI', a.roiPercentInPeriod != null ? '${a.roiPercentInPeriod!.toStringAsFixed(1)}%' : '—', 'on sold cards',
-                    valueColor: (a.roiPercentInPeriod ?? 0) >= 0 ? AppColors.profit : AppColors.loss)),
-              ]),
-          ]),
-        );
-      }),
-    );
-  }
-
-  Widget _rangeChip(String label, String value, String selected) {
-    final isActive = selected == value;
-    return GestureDetector(
-      onTap: () => controller.setRange(value),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10.r),
-          color: isActive ? AppColors.accent.withOpacity(0.15) : AppColors.bgSurface,
-        ),
-        child: Text(label, style: GoogleFonts.inter(fontSize: 10.sp, fontWeight: FontWeight.w600,
-            color: isActive ? AppColors.accent : AppColors.textSecondary)),
-      ),
-    );
-  }
-
-  Widget _activityStat(String label, String value, String sublabel, {Color? valueColor}) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: GoogleFonts.inter(fontSize: 10.sp, color: AppColors.textSecondary)),
-      SizedBox(height: 4.h),
-      FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Text(value, maxLines: 1, style: GoogleFonts.inter(fontSize: 15.sp, fontWeight: FontWeight.w700,
-            color: valueColor ?? AppColors.textPrimary)),
-      ),
-      SizedBox(height: 2.h),
-      Text(sublabel, style: GoogleFonts.inter(fontSize: 9.sp, color: AppColors.textMuted)),
-    ]);
   }
 
   Widget _miniStat(String label, String value, {bool highlight = false, VoidCallback? onTap}) {
@@ -602,6 +499,8 @@ class DashboardView extends GetView<DashboardController> {
                   _drawerTile(Icons.style_rounded,         'My Collection',   'All your tracked cards',     AppColors.accent,   () { Get.back(); Get.toNamed(AppRoutes.collection); }),
                   SizedBox(height: 6.h),
                   _drawerTile(Icons.sell_rounded,          'Sold History',    'Cards you\'ve sold + P&L',   AppColors.textSecondary, () { Get.back(); Get.toNamed(AppRoutes.soldHistory); }),
+                  SizedBox(height: 6.h),
+                  _drawerTile(Icons.bar_chart_rounded,     'Activity Report', 'Buying & selling by date range', AppColors.textSecondary, () { Get.back(); Get.toNamed(AppRoutes.activityReport); }),
                   SizedBox(height: 6.h),
                   _drawerTile(Icons.notifications_rounded, 'Notifications',   'Price alerts & updates',     AppColors.textSecondary, () { Get.back(); Get.toNamed(AppRoutes.notifications); }),
 

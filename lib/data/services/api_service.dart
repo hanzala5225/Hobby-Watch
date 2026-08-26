@@ -232,9 +232,16 @@ class ApiService extends GetxService {
     required DateTime startDate,
     required DateTime endDate,
   }) async {
+    // Bug fix (2026-08-26): startDate/endDate are built from local calendar
+    // boundaries (correct — "this month" means the user's local month), but
+    // were being sent via toIso8601String() with no timezone marker at all.
+    // DB columns are TIMESTAMPTZ (UTC); an unmarked date string is ambiguous
+    // to the backend and was silently matching zero rows instead of erroring.
+    // .toUtc() converts the same real moment in time into an explicit,
+    // unambiguous UTC instant before sending.
     final res = await _dio.get('/cards/activity-summary', queryParameters: {
-      'startDate': startDate.toIso8601String(),
-      'endDate': endDate.toIso8601String(),
+      'startDate': startDate.toUtc().toIso8601String(),
+      'endDate': endDate.toUtc().toIso8601String(),
     });
     return ActivitySummary.fromJson(res.data['data']);
   }
