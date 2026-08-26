@@ -99,7 +99,7 @@ class _ChooseStep extends StatelessWidget {
                     }),
 
                     _OptionButton(icon: Icons.camera_alt_rounded, label: 'Scan with Camera',
-                        subtitle: 'Point at card — we read the text', isPrimary: true, onTap: c.takePhoto),
+                        subtitle: 'Point at card. We read the text', isPrimary: true, onTap: c.takePhoto),
                     SizedBox(height: 12.h),
                     _OptionButton(icon: Icons.photo_library_outlined, label: 'Choose from Gallery',
                         subtitle: 'Pick an existing photo', isPrimary: false, onTap: c.pickFromGallery),
@@ -1064,7 +1064,7 @@ class _VerifyStep extends StatelessWidget {
                       color: hasError ? AppColors.loss : AppColors.accent, size: 20.sp),
                   SizedBox(width: 10.w),
                   Expanded(child: Text(
-                    hasError ? err : 'Check these details — anything missing or wrong here will affect the eBay search below.',
+                    hasError ? err : 'Check these details. Anything missing or wrong here will affect the eBay search below.',
                     style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary, height: 1.4),
                   )),
                 ]),
@@ -1123,7 +1123,7 @@ class _VerifyStep extends StatelessWidget {
               ),
             ),
             SizedBox(height: 6.h),
-            Text('Auto-filled from the fields above — feel free to edit it directly.',
+            Text('Auto-filled from the fields above. Feel free to edit it directly.',
                 style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted)),
 
             SizedBox(height: 32.h),
@@ -1164,7 +1164,7 @@ class _VerifyStep extends StatelessWidget {
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 20.sp),
                   SizedBox(width: 10.w),
-                  Text('Skip search — set price manually',
+                  Text('Skip search - Set price manually',
                       style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.primary)),
                 ]),
               ),
