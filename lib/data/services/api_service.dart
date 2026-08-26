@@ -198,6 +198,17 @@ class ApiService extends GetxService {
     return (cards: cards, summary: summary, totalCount: totalCount);
   }
 
+  Future<ActivitySummary> getActivitySummary({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final res = await _dio.get('/cards/activity-summary', queryParameters: {
+      'startDate': startDate.toIso8601String(),
+      'endDate': endDate.toIso8601String(),
+    });
+    return ActivitySummary.fromJson(res.data['data']);
+  }
+
   Future<CardModel> addCard(Map<String, dynamic> data) async {
     final res = await _dio.post('/cards', data: data);
     return CardModel.fromJson(res.data['data'] ?? res.data);

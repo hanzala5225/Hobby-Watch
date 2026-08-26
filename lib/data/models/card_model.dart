@@ -153,6 +153,39 @@ class PortfolioSummary {
   static PortfolioSummary empty() => PortfolioSummary();
 }
 
+class ActivitySummary {
+  final DateTime startDate;
+  final DateTime endDate;
+  final int cardsAdded;
+  final double totalInvestedInPeriod;
+  final int cardsSold;
+  final double totalRevenueInPeriod;
+  final double totalProfitInPeriod;
+  final double? roiPercentInPeriod;
+
+  ActivitySummary({
+    required this.startDate,
+    required this.endDate,
+    this.cardsAdded = 0,
+    this.totalInvestedInPeriod = 0,
+    this.cardsSold = 0,
+    this.totalRevenueInPeriod = 0,
+    this.totalProfitInPeriod = 0,
+    this.roiPercentInPeriod,
+  });
+
+  factory ActivitySummary.fromJson(Map<String, dynamic> json) => ActivitySummary(
+    startDate:             DateTime.parse(json['startDate']),
+    endDate:               DateTime.parse(json['endDate']),
+    cardsAdded:            json['cardsAdded'] ?? 0,
+    totalInvestedInPeriod: (json['totalInvestedInPeriod'] as num?)?.toDouble() ?? 0,
+    cardsSold:             json['cardsSold'] ?? 0,
+    totalRevenueInPeriod:  (json['totalRevenueInPeriod'] as num?)?.toDouble() ?? 0,
+    totalProfitInPeriod:   (json['totalProfitInPeriod'] as num?)?.toDouble() ?? 0,
+    roiPercentInPeriod:    (json['roiPercentInPeriod'] as num?)?.toDouble(),
+  );
+}
+
 class PriceHistoryPage {
   final List<Map<String, dynamic>> history;
   final bool hasMore;
