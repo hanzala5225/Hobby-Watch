@@ -66,7 +66,7 @@ class SignupController extends GetxController {
           e.type == DioExceptionType.receiveTimeout ||
           e.type == DioExceptionType.sendTimeout ||
           e.type == DioExceptionType.connectionError) {
-        return 'Could not reach the server. It may be waking up — please try again in a moment.';
+        return 'Could not reach the server. Please try again in a moment.';
       }
       final status = e.response?.statusCode;
       final serverMessage = e.response?.data is Map ? e.response?.data['message'] : null;

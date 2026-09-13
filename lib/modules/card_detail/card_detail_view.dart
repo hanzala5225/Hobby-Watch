@@ -197,7 +197,7 @@ class CardDetailView extends GetView<CardDetailController> {
                                 Icon(Icons.sell_rounded, color: Colors.white, size: 20.sp),
                                 SizedBox(width: 10.w),
                                 Text(
-                                  card.isTargetReached ? '🎯 Mark as Sold — Target Reached!' : 'Mark as Sold',
+                                  card.isTargetReached ? '🎯 Mark as Sold. Target Reached!' : 'Mark as Sold',
                                   style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: Colors.white),
                                 ),
                               ],
@@ -405,7 +405,7 @@ class CardDetailView extends GetView<CardDetailController> {
                                 : DateTime.now();
                             return Container(
                               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                              decoration: BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.divider))),
+                              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.divider))),
                               child: Row(children: [
                                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                   Text(DateFormat('MMM d, h:mm a').format(date),

@@ -41,9 +41,6 @@ class OcrService extends GetxService {
     }
   }
 
-  // Common NFL/NBA/MLB team names — excluded from player-name detection
-  // since they're 2-3 word, title-case lines that otherwise look identical
-  // to a real player name to the heuristic below.
   static const _teamNames = [
     'Arizona Cardinals', 'Atlanta Falcons', 'Baltimore Ravens', 'Buffalo Bills',
     'Carolina Panthers', 'Chicago Bears', 'Cincinnati Bengals', 'Cleveland Browns',
@@ -55,8 +52,6 @@ class OcrService extends GetxService {
     'Seattle Seahawks', 'Tampa Bay Buccaneers', 'Tennessee Titans', 'Washington Commanders',
   ];
 
-  // Common stat-table / card-back header words that pass the name heuristic
-  // (single word, no digits, capitalized) but are never actually a name.
   static const _headerWords = [
     'Year', 'Team', 'Rec', 'Yds', 'Avg', 'Td', 'Ncaa', 'Totals',
     'Authentic', 'Super', 'Seat', 'Row', 'Section', 'Rookie', 'Ticket',
@@ -78,11 +73,6 @@ class OcrService extends GetxService {
     String? grade;
     String? modelCode;
 
-    // ── Year detection (4-digit number 1950–2030) ─────────────────────────
-    // Prefer a year found on the same line as the brand/product (e.g.
-    // "2024 PANINI - CONTENDERS FOOTBALL"), since that's the card's actual
-    // print year — a year mentioned inside a stat paragraph (e.g. "...17
-    // touchdowns in 2023") is a player stat, not the card year.
     final yearRegex = RegExp(r'\b(19[5-9]\d|20[0-2]\d)\b');
     for (final line in lines) {
       final match = yearRegex.firstMatch(line);
@@ -141,8 +131,6 @@ class OcrService extends GetxService {
       if (brand != null) break;
     }
 
-    // If the brand line itself contains a year, prefer that over whatever
-    // generic year we found first (see comment above).
     if (brandLine != null) {
       final brandYearMatch = yearRegex.firstMatch(brandLine);
       if (brandYearMatch != null) year = brandYearMatch.group(0);

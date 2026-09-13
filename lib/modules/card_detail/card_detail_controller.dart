@@ -347,7 +347,7 @@ class MarkSoldDialog extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(10.r),
                               ),
                               child: Text(
-                                '+${card.currentMarginPercent?.toStringAsFixed(1)}% margin — above your ${card.targetMarginPercent.toStringAsFixed(0)}% target 🚀',
+                                '+${card.currentMarginPercent?.toStringAsFixed(1)}% margin above your ${card.targetMarginPercent.toStringAsFixed(0)}% target 🚀',
                                 style: GoogleFonts.inter(fontSize: 11.sp, fontWeight: FontWeight.w600, color: Colors.white),
                               ),
                             ),
@@ -411,7 +411,7 @@ class MarkSoldDialog extends StatelessWidget {
                                 ),
                                 SizedBox(width: 10.w),
                                 Expanded(child: Text(
-                                  'Sold outside of eBay — No Fees',
+                                  'Sold outside of eBay. No Fees',
                                   style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                                 )),
                               ]),

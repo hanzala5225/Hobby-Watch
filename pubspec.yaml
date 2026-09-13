@@ -1,6 +1,6 @@
 name: hobbywatch
 description: Sports card profit alert app. Track your collection and get notified when it's time to sell.
-version: 1.0.0+9
+version: 1.0.0+10
 publish_to: none
 
 environment:

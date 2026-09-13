@@ -67,12 +67,6 @@ class ScanCardController extends GetxController with WidgetsBindingObserver {
     _userEditedQuery = true;
   }
 
-  // Builds "{Player Name} {Year} {Brand/Set} {Parallel} #{Card Number} {Grade}",
-  // skipping any part that's empty, and fills it into the search query field —
-  // unless the user has already typed their own custom query on the Verify
-  // screen. This is what lets the user catch anything OCR missed or got
-  // wrong (e.g. the parallel/variety, which OCR doesn't detect at all) before
-  // it's ever sent to the eBay API.
   void _composeQuery() {
     if (_userEditedQuery) return;
 
@@ -95,11 +89,6 @@ class ScanCardController extends GetxController with WidgetsBindingObserver {
     _autoFilling = false;
   }
 
-  // Called automatically when the app comes back to the foreground — e.g.
-  // Tim backgrounds the app, flips Camera ON in Settings, then returns.
-  // iOS/Android don't always refresh a running app's cached permission
-  // state on simple resume, so we explicitly re-check here rather than
-  // waiting for another tap on "Scan with Camera".
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && _awaitingSettingsReturn) {
@@ -113,17 +102,10 @@ class ScanCardController extends GetxController with WidgetsBindingObserver {
     if (status.isGranted) {
       errorMessage.value = '';
     }
-    // If it's still denied here, the OS-level toggle genuinely isn't on,
-    // or (on iOS especially) the change needs a full app restart to take
-    // effect — the error banner's copy covers that case.
   }
 
   Future<void> takePhoto() async {
-    // iOS silently refuses to launch the camera if permission was ever
-    // denied — image_picker alone doesn't handle re-prompting or recovery.
-    // Check current status first (non-prompting) rather than always calling
-    // request(), since request() on an already-decided permission can hand
-    // back a stale cached result on some OS/plugin versions.
+
     var status = await Permission.camera.status;
     if (status.isDenied) {
       // Only truly undetermined permissions get the system dialog.
@@ -167,9 +149,6 @@ class ScanCardController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  // Opens the camera/gallery scanner from the "Add Card" screen's new
-  // "Try our Graded Card Scanner (beta)" button. Whatever the user has
-  // already typed manually is left untouched unless a scan actually completes.
   void openGradedScanner() {
     currentStep.value = ScanStep.choose;
   }
@@ -187,11 +166,9 @@ class ScanCardController extends GetxController with WidgetsBindingObserver {
       setNameController.text     = result.setName ?? result.brand ?? '';
       cardNumberController.text  = result.cardNumber ?? '';
       gradeController.text       = result.grade ?? '';
-      // parallelController is intentionally left blank — OCR doesn't detect
-      // the parallel/variety yet, so the user fills it in on the Verify screen.
+
       _composeQuery();
-      // Land on Verify instead of searching immediately, so the user can
-      // correct anything OCR missed or got wrong before it's sent to eBay.
+
       currentStep.value = ScanStep.verify;
     } catch (e) {
       errorMessage.value = 'Could not process image. Fill in the details below manually.';
@@ -214,8 +191,6 @@ class ScanCardController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  // Called from the Verify screen's "Search eBay" button, and reused to
-  // retry/edit a search from the Results screen's search bar.
   Future<void> retrySearch() async {
     final q = searchQueryController.text.trim();
     if (q.isEmpty) {
@@ -278,8 +253,7 @@ class ScanCardController extends GetxController with WidgetsBindingObserver {
         currentStep.value = ScanStep.results;
         break;
       default:
-      // ScanStep.verify ("Add Card") is now the entry point — back exits
-      // the whole flow, same as ScanStep.processing falling through here.
+
         Get.back();
     }
   }

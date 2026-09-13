@@ -13,25 +13,8 @@ class ApiService extends GetxService {
   late final Dio _dio;
   final _log = Logger();
 
-  // Bug fix (2026-08-25): concurrent 401s (e.g. all 4 of dashboard's onInit
-  // requests hitting an expired token at once) used to each independently
-  // call _tryRefreshToken(). Since refresh tokens rotate on use, the first
-  // succeeded and invalidated the token the others were still using — so
-  // those others independently decided the session was dead and EACH called
-  // Get.offAllNamed('/login') within milliseconds of each other, colliding
-  // on the same LoginController's Form GlobalKey mid-build (the "Multiple
-  // widgets used the same GlobalKey" crash Hanzala hit, and very likely the
-  // same "randomly on the login screen" reports from Tim/Brent). Fix: make
-  // refresh single-flight — concurrent callers await the one in-flight
-  // refresh instead of each starting their own.
   Future<_RefreshResult>? _inFlightRefresh;
 
-  // Same race, second half: even with the refresh call itself de-duplicated
-  // above, if that ONE shared refresh attempt fails, every concurrent caller
-  // still resumes at ~the same moment and would each independently run the
-  // logout+redirect block below. This flag ensures only the first one
-  // actually clears storage and navigates; the rest are already headed to
-  // /login by then and can just stop.
   bool _loggingOutFromExpiredSession = false;
 
   @override
@@ -65,9 +48,6 @@ class ApiService extends GetxService {
             return handler.next(e);
           }
 
-          // Try silent token refresh — single-flight: if a refresh is already
-          // in progress (from another concurrent 401), await that SAME
-          // attempt instead of starting a new one. See _inFlightRefresh docs.
           final refreshResult = await (_inFlightRefresh ??= _tryRefreshToken().whenComplete(() {
             _inFlightRefresh = null;
           }));
@@ -88,9 +68,7 @@ class ApiService extends GetxService {
             await prefs.remove(AppConstants.keyRefreshToken);
             await prefs.remove(AppConstants.keyUser);
             Get.offAllNamed('/login');
-            // Reset shortly after — not immediately, so any other 401s still
-            // resolving in this same batch see the flag and skip, rather than
-            // sneaking in a second navigation a few milliseconds later.
+
             Future.delayed(const Duration(seconds: 2), () => _loggingOutFromExpiredSession = false);
           }
         }
@@ -124,14 +102,11 @@ class ApiService extends GetxService {
       }
       return _RefreshResult.networkError;
     } on DioException catch (e) {
-      // The refresh endpoint itself explicitly rejected the refresh token —
-      // that's a real "you're logged out" signal.
+
       if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
         return _RefreshResult.authInvalid;
       }
-      // Timeouts, no connection, 5xx from a waking server, etc. — not proof
-      // the session is invalid, just a transient failure. Stay logged in
-      // locally and let the next attempt (or app reopen) try again.
+
       _log.e('Token refresh failed (network): ${e.message}');
       return _RefreshResult.networkError;
     } catch (e) {
@@ -232,13 +207,7 @@ class ApiService extends GetxService {
     required DateTime startDate,
     required DateTime endDate,
   }) async {
-    // Bug fix (2026-08-26): startDate/endDate are built from local calendar
-    // boundaries (correct — "this month" means the user's local month), but
-    // were being sent via toIso8601String() with no timezone marker at all.
-    // DB columns are TIMESTAMPTZ (UTC); an unmarked date string is ambiguous
-    // to the backend and was silently matching zero rows instead of erroring.
-    // .toUtc() converts the same real moment in time into an explicit,
-    // unambiguous UTC instant before sending.
+
     final res = await _dio.get('/cards/activity-summary', queryParameters: {
       'startDate': startDate.toUtc().toIso8601String(),
       'endDate': endDate.toUtc().toIso8601String(),

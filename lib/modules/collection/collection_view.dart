@@ -221,7 +221,7 @@ class _CollectionCardTile extends StatelessWidget {
                         ),
                         SizedBox(height: 10.h),
                         Text(
-                          isTargetReached ? 'Wait — this card is hot! 🔥' : 'Delete Card?',
+                          isTargetReached ? 'Wait. This card is hot! 🔥' : 'Delete Card?',
                           style: GoogleFonts.inter(
                               fontSize: 17.sp, fontWeight: FontWeight.w800,
                               color: isTargetReached ? AppColors.accent : AppColors.loss),
@@ -285,7 +285,7 @@ class _CollectionCardTile extends StatelessWidget {
                               Icon(Icons.trending_up_rounded, color: AppColors.accent, size: 16.sp),
                               SizedBox(width: 8.w),
                               Expanded(child: Text(
-                                  'This card has hit your target margin! Consider marking it as sold instead — you\'ll keep your profit record.',
+                                  'This card has hit your target margin! Consider marking it as sold instead. You\'ll keep your profit record.',
                                   style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary, height: 1.4))),
                             ]),
                           ),
@@ -302,7 +302,7 @@ class _CollectionCardTile extends StatelessWidget {
                               Icon(Icons.lightbulb_outline_rounded, color: AppColors.accent, size: 16.sp),
                               SizedBox(width: 8.w),
                               Expanded(child: Text(
-                                  'This card is currently in profit. Deleting removes it permanently — no profit record saved.',
+                                  'This card is currently in profit. Deleting removes it permanently. No profit record saved.',
                                   style: GoogleFonts.inter(fontSize: 12.sp, color: AppColors.textSecondary, height: 1.4))),
                             ]),
                           ),

@@ -631,7 +631,7 @@ class _CardDetailSheet extends StatelessWidget {
                               imageUrl: item.imageUrl!,
                               fit: BoxFit.contain,
                               placeholder: (_, __) => Container(height: 220.h, color: AppColors.bgSurface,
-                                  child: Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2))),
+                                  child: const Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2))),
                               errorWidget: (_, __, ___) => Container(height: 220.h, color: AppColors.bgSurface,
                                   child: Icon(Icons.broken_image_outlined, size: 48.sp, color: AppColors.textMuted)),
                             ),
@@ -700,7 +700,7 @@ class _CardDetailSheet extends StatelessWidget {
                               Icon(Icons.info_outline_rounded, color: AppColors.textMuted, size: 15.sp),
                               SizedBox(width: 8.w),
                               Expanded(child: Text(
-                                'Price based on real recent eBay sold listings — Best-Offer sales excluded since eBay doesn\'t disclose the actual accepted price on those.',
+                                'Price based on real recent eBay sold listings. Best-Offer sales excluded since eBay doesn\'t disclose the actual accepted price on those.',
                                 style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted, height: 1.5),
                               )),
                             ]),
@@ -725,7 +725,7 @@ class _CardDetailSheet extends StatelessWidget {
                                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                                   Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20.sp),
                                   SizedBox(width: 10.w),
-                                  Text('This is my card — Continue',
+                                  Text('This is my card. Continue..',
                                       style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: Colors.white)),
                                 ]),
                               ),
@@ -787,18 +787,18 @@ class _CardDetailSheet extends StatelessWidget {
 
   String _gradeExplanation(String grade) {
     if (grade.contains('PSA')) {
-      if (grade.contains('10')) return 'PSA 10 — Gem Mint. Highest grade. Commands premium prices, typically 3–10x raw card value.';
-      if (grade.contains('9')) return 'PSA 9 — Mint. Excellent condition with minor imperfections. Significant value above raw.';
-      if (grade.contains('8')) return 'PSA 8 — Near Mint-Mint. Very good condition with slight wear.';
-      return 'PSA graded card — professionally authenticated and graded by PSA.';
+      if (grade.contains('10')) return 'PSA 10: Gem Mint. Highest grade. Commands premium prices, typically 3–10x raw card value.';
+      if (grade.contains('9')) return 'PSA 9: Mint. Excellent condition with minor imperfections. Significant value above raw.';
+      if (grade.contains('8')) return 'PSA 8: Near Mint-Mint. Very good condition with slight wear.';
+      return 'PSA graded card: professionally authenticated and graded by PSA.';
     }
     if (grade.contains('BGS')) {
-      if (grade.contains('10')) return 'BGS 10 Pristine — Extremely rare. Often valued above PSA 10.';
-      if (grade.contains('9.5')) return 'BGS 9.5 Gem Mint — Very desirable grade from Beckett.';
-      return 'BGS graded card — professionally authenticated and graded by Beckett.';
+      if (grade.contains('10')) return 'BGS 10 Pristine: Extremely rare. Often valued above PSA 10.';
+      if (grade.contains('9.5')) return 'BGS 9.5 Gem Mint: Very desirable grade from Beckett.';
+      return 'BGS graded card: professionally authenticated and graded by Beckett.';
     }
-    if (grade.contains('SGC')) return 'SGC graded card — authenticated by SGC. Popular for vintage cards.';
-    if (grade.contains('CGC')) return 'CGC graded card — CGC recently expanded to trading cards.';
+    if (grade.contains('SGC')) return 'SGC graded card: authenticated by SGC. Popular for vintage cards.';
+    if (grade.contains('CGC')) return 'CGC graded card: CGC recently expanded to trading cards.';
     return 'Professionally graded card with verified authenticity.';
   }
 }

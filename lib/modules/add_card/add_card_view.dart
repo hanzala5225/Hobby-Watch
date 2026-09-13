@@ -145,7 +145,7 @@ class AddCardView extends GetView<AddCardController> {
             SizedBox(height: 8.h),
             TextFormField(controller: controller.cardNumberController,
                 style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14.sp),
-                decoration: InputDecoration(hintText: '#139')),
+                decoration: const InputDecoration(hintText: '#139')),
           ])),
           SizedBox(width: 12.w),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -164,7 +164,7 @@ class AddCardView extends GetView<AddCardController> {
             decoration: InputDecoration(hintText: 'e.g. 1996 Topps Michael Jordan PSA 10',
                 prefixIcon: Icon(Icons.search, color: AppColors.textMuted, size: 20.sp))),
         SizedBox(height: 6.h),
-        Text('Auto-filled from the details above — feel free to edit it.',
+        Text('Auto-filled from the details above. Feel free to edit it.',
             style: GoogleFonts.inter(fontSize: 11.sp, color: AppColors.textMuted)),
         SizedBox(height: 32.h),
       ],

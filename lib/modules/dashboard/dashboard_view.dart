@@ -28,8 +28,6 @@ class DashboardView extends GetView<DashboardController> {
       child: Scaffold(
         backgroundColor: AppColors.bgDark,
 
-        // IMPORTANT:
-        // context is explicitly passed into the drawer.
         drawer: _buildDrawer(context),
 
         body: SafeArea(
@@ -1425,7 +1423,7 @@ class DashboardView extends GetView<DashboardController> {
 
                   Center(
                     child: Text(
-                      'Sports card profit tracking · v1.0.09',
+                      'Sports card profit tracking · v1.0.10',
                       style: GoogleFonts.inter(
                         fontSize: 9.sp,
                         color: AppColors.textMuted,

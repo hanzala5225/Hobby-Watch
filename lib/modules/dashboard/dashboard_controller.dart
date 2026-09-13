@@ -18,11 +18,6 @@ class DashboardController extends GetxController {
   final user         = Rx<UserModel?>(null);
   final unreadCount  = 0.obs;
 
-  // Capped at 6 + sorted by highest margin first (most urgent to sell) — the
-  // header badge next to this section uses summary.cardsAtTarget for the
-  // TRUE total count, since this list is deliberately capped for the
-  // horizontal preview strip. "View all" links to the Collection screen's
-  // Ready-to-Sell filter to see the rest.
   List<CardModel> get targetReachedCards {
     final list = cards.where((c) => c.isTargetReached && !c.isSold).toList()
       ..sort((a, b) => (b.currentMarginPercent ?? 0).compareTo(a.currentMarginPercent ?? 0));
@@ -50,11 +45,7 @@ class DashboardController extends GetxController {
     if (idx == -1) return;
 
     if (updated.isSold) {
-      // A sold card no longer belongs in the active dashboard list (that's
-      // what was causing "My Collection (1)" to stick around after selling —
-      // the card was being updated in place instead of removed). Remove it
-      // and recompute the summary tiles locally so Portfolio Value / Invested
-      // / Cards update instantly, without waiting for a manual refresh.
+
       final removed = cards[idx];
       cards.removeAt(idx);
 
@@ -81,8 +72,6 @@ class DashboardController extends GetxController {
       cards.refresh();
     }
 
-    // Quietly reconcile with the backend afterwards (exact fee math etc.)
-    // without a loading spinner or blocking the UI the user already sees.
     _silentSync();
   }
 
@@ -128,10 +117,6 @@ class DashboardController extends GetxController {
     }
   }
 
-  // Public so other controllers (add-card, notifications screen) can trigger
-  // a refresh after doing something that changes the unread count — e.g.
-  // Get.find<DashboardController>().refreshUnreadCount() after marking a
-  // notification read, or after adding a card that fires an alert.
   Future<void> refreshUnreadCount() async {
     unreadCount.value = await _api.getUnreadNotificationCount();
   }
