@@ -75,7 +75,10 @@ class NotificationService extends GetxService {
       if (apnsToken == null) {
         _log.w('APNs token not available (expected on Simulator) — skipping FCM token fetch.');
       } else {
-        // Register FCM token with backend
+        // Register FCM token with backend. This boot-time attempt can still
+        // race ahead of login on a fresh install (no auth token yet, so the
+        // save silently 401s) — that's expected. The reliable save point is
+        // registerFcmToken() below, called explicitly after login/signup.
         try {
           final token = await FirebaseMessaging.instance.getToken();
           if (token != null) {
@@ -120,6 +123,55 @@ class NotificationService extends GetxService {
       }
     } catch (e) {
       _log.w('Firebase Messaging setup failed: $e');
+    }
+  }
+
+  // ─── Post-login token registration (the real fix) ─────────────────────────
+
+  /// Re-fetches the current FCM token and saves it to the backend. Call this
+  /// right after a successful login AND right after a successful
+  /// registration — see login_controller.dart / signup_controller.dart.
+  ///
+  /// BUG FIX (2026-09): login/signup controllers previously called
+  /// `FirebaseMessaging.instance.getToken()` directly, with no wait for the
+  /// APNs token first — unlike the boot-time path above, which correctly
+  /// waits up to 5s. On a genuinely fresh install (permission just granted,
+  /// login submitted almost immediately after), Apple's APNs handshake can
+  /// still be mid-flight — getToken() then throws on iOS, and that was
+  /// getting silently swallowed by a bare `catch (_) {}` with zero logging,
+  /// so this failure was completely invisible. This version waits for APNs
+  /// the same way the boot path does, and retries once after a short delay
+  /// if it's still not ready, with real logging at every step.
+  Future<void> registerFcmToken({int retriesLeft = 1}) async {
+    try {
+      String? apnsToken;
+      try {
+        apnsToken = await FirebaseMessaging.instance
+            .getAPNSToken()
+            .timeout(const Duration(seconds: 5), onTimeout: () => null);
+      } catch (e) {
+        _log.w('registerFcmToken: getAPNSToken failed: $e');
+      }
+
+      if (apnsToken == null) {
+        if (retriesLeft > 0) {
+          _log.w('registerFcmToken: APNs token not ready yet, retrying in 3s...');
+          await Future.delayed(const Duration(seconds: 3));
+          return registerFcmToken(retriesLeft: retriesLeft - 1);
+        }
+        _log.w('registerFcmToken: APNs token still not available after retry — giving up for this session.');
+        return;
+      }
+
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token == null) {
+        _log.w('registerFcmToken: getToken() returned null');
+        return;
+      }
+      await Get.find<ApiService>().updateFcmToken(token);
+      _log.i('FCM token registered post-login: $token');
+    } catch (e) {
+      _log.w('registerFcmToken failed: $e');
     }
   }
 

@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app/utils/app_constants.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/notification_service.dart';
 import '../../routes/app_routes.dart';
 
 class LoginController extends GetxController {
@@ -31,13 +31,14 @@ class LoginController extends GetxController {
       await prefs.setString(AppConstants.keyRefreshToken, auth.refreshToken);
       await prefs.setString(AppConstants.keyUser, jsonEncode(auth.user.toJson()));
 
-      // Now JWT is saved — register FCM token while we have auth
-      try {
-        final fcmToken = await FirebaseMessaging.instance.getToken();
-        if (fcmToken != null) {
-          await _api.updateFcmToken(fcmToken);
-        }
-      } catch (_) {} // non-fatal
+      // Now JWT is saved — register FCM token while we have auth.
+      // Bug fix (2026-09): this used to call FirebaseMessaging.getToken()
+      // directly with no wait for APNs first, which could throw silently on
+      // a fresh install (permission just granted, APNs handshake still in
+      // flight) and get swallowed by a bare catch, with zero logging.
+      // registerFcmToken() waits for APNs and retries once — see
+      // notification_service.dart for the full explanation.
+      Get.find<NotificationService>().registerFcmToken();
 
       Get.offAllNamed(AppRoutes.dashboard);
     } catch (e) {

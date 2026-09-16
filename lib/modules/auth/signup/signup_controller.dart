@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app/utils/app_constants.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/notification_service.dart';
 import '../../routes/app_routes.dart';
 
 class SignupController extends GetxController {
@@ -42,13 +42,10 @@ class SignupController extends GetxController {
       await prefs.setString(AppConstants.keyRefreshToken, auth.refreshToken);
       await prefs.setString(AppConstants.keyUser, jsonEncode(auth.user.toJson()));
 
-      // JWT is now saved — register FCM token
-      try {
-        final fcmToken = await FirebaseMessaging.instance.getToken();
-        if (fcmToken != null) {
-          await _api.updateFcmToken(fcmToken);
-        }
-      } catch (_) {} // non-fatal
+      // JWT is now saved — register FCM token. Same fix as login_controller.dart:
+      // routes through the APNs-aware, retrying registerFcmToken() instead of a
+      // bare getToken() call that could silently fail on a fresh install.
+      Get.find<NotificationService>().registerFcmToken();
 
       Get.offAllNamed(AppRoutes.dashboard);
     } catch (e) {
