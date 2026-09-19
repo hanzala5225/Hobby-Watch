@@ -225,6 +225,12 @@ class CardDetailView extends GetView<CardDetailController> {
                         _detailRow('Added Via', card.addedVia.capitalizeFirst ?? card.addedVia),
                         if (isSold && card.soldAt != null)
                           _detailRow('Sold On', DateFormat('MMM d, y').format(card.soldAt!.toLocal())),
+                        if (isSold)
+                          _detailRow('Shipping Charged',
+                              card.shippingCharge > 0 ? fmt.format(card.shippingCharge) : 'None'),
+                        if (isSold)
+                          _detailRow('Tax Charged',
+                              card.taxCharged > 0 ? fmt.format(card.taxCharged) : 'None'),
                         _detailRow('Last Update',
                             card.lastPriceUpdate != null
                                 ? DateFormat('MMM d, y h:mm a').format(card.lastPriceUpdate!.toLocal())

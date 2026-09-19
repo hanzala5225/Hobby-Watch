@@ -1423,7 +1423,7 @@ class DashboardView extends GetView<DashboardController> {
 
                   Center(
                     child: Text(
-                      'Sports card profit tracking · v1.0.10',
+                      'Sports card profit tracking · v1.0.11',
                       style: GoogleFonts.inter(
                         fontSize: 9.sp,
                         color: AppColors.textMuted,
